@@ -15,9 +15,8 @@ To configure manually, add to the `platforms` section of Homebridge's `config.js
 **Config:**
 ```json
 {
-  "platform": "AirportExpressPlaying",
-  "name": "Airport Express Playing Platform",
-  "showSwitch": true
+  "platform": "AirportExpressConnected",
+  "name": "Airport Express Playing Platform"
 }
 ```
 

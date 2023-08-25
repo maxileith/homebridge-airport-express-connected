@@ -1,25 +1,19 @@
 {
-  "pluginAlias": "AirportExpressPlaying",
-  "pluginType": "platform",
-  "singular": true,
-  "headerDisplay": "This plugin will automatically detect any Airport Express devices on your network.",
-  "schema": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "default": "Airport Express Playing Platform",
-        "required": true
-      },
-      "showSwitch": {
-        "title": "Show Switch (for home automations)",
-        "type": "boolean",
-        "default": true,
-        "required": true
-      }
-    }
-  },
-  "form": null,
-  "display": null
+    "pluginAlias": "AirportExpressConnected",
+    "pluginType": "platform",
+    "singular": true,
+    "headerDisplay": "This plugin will automatically detect any Airport Express devices on your network.",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "string",
+                "default": "Airport Express Playing Platform",
+                "required": true
+            }
+        }
+    },
+    "form": null,
+    "display": null
 }

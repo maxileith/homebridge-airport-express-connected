@@ -1,7 +1,14 @@
-export const PLATFORM_NAME = 'AirportExpressPlaying';
-export const PLUGIN_NAME = 'homebridge-airport-express-playing';
+/**
+ * This is the name of the platform that users will use to register the plugin in the Homebridge config.json
+ */
+export const PLATFORM_NAME = "AirportExpressConnected";
+
+/**
+ * This must match the name of your plugin as defined the package.json
+ */
+export const PLUGIN_NAME = "@maxileith/homebridge-airport-express-connected";
 
 export interface mDNSReply {
-  txt: Array<string>;
-  fullname: string;
+    txt: Array<string>;
+    fullname: string;
 }

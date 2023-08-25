@@ -1,1 +1,1 @@
-declare module 'mdns-js';
+declare module "mdns-js";
