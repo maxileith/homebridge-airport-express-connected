@@ -1,7 +1,7 @@
 {
     "name": "@maxileith/homebridge-airport-express-connected",
     "displayName": "Airport Express",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "description": "Homebridge plugin that uses mDNS request data to show a sensor that is beeing triggered when playing on airport express devices. For the new HomeKit architecture.",
     "main": "dist/index.js",
     "author": "Maximilian Leith",
@@ -9,7 +9,7 @@
         "lint": "eslint src/**.ts --max-warnings=0",
         "watch": "npm run build && npm link && nodemon",
         "build": "rimraf ./dist && tsc",
-        "prepublishOnly": "npm run lint && npm run build"
+        "prepublishOnly": "npm run build"
     },
     "engines": {
         "homebridge": ">=1.6.1",

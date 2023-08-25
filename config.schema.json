@@ -9,7 +9,7 @@
             "name": {
                 "title": "Name",
                 "type": "string",
-                "default": "Airport Express Playing Platform",
+                "default": "Airport Express Connected Platform",
                 "required": true
             }
         }

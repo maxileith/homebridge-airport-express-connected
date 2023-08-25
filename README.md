@@ -16,12 +16,12 @@ To configure manually, add to the `platforms` section of Homebridge's `config.js
 ```json
 {
   "platform": "AirportExpressConnected",
-  "name": "Airport Express Playing Platform"
+  "name": "Airport Express Connected Platform"
 }
 ```
 
 ## Notes
-1. Will not work when AirPlaying from iTunes running on Win10
+1. Will not work when AirConnected from iTunes running on Win10
 2. Will not work in many situations involving grouped accessories due to limitations in mDNS
 
 ## Sponsors
