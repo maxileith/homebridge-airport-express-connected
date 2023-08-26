@@ -11,7 +11,8 @@ import { mDNSReply } from "./settings";
 export default class AirportExpressAccessory {
     private service: Service;
     private prevConnectionStatus: 0 | 1;
-    private prevReachableStatus: 0 | 1 = this.platform.Characteristic.StatusFault.NO_FAULT;
+    private prevReachableStatus: 0 | 1 =
+        this.platform.Characteristic.StatusFault.NO_FAULT;
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -83,18 +84,13 @@ export default class AirportExpressAccessory {
                             `txt record contents: ${data.txt}`
                         );
                         this.setConnectStatus(this.isDeviceConnected(data.txt));
-                    }
-
-                    // not reachable
-                    if (foundSerialNumber === undefined) {
+                        this.setReachableStatus(
+                            this.platform.Characteristic.StatusFault.NO_FAULT
+                        );
+                    } else {
                         this.setReachableStatus(
                             this.platform.Characteristic.StatusFault
                                 .GENERAL_FAULT
-                        );
-                    } else  {
-                        this.setReachableStatus(
-                            this.platform.Characteristic.StatusFault
-                                .NO_FAULT
                         );
                     }
                 }
@@ -178,14 +174,14 @@ export default class AirportExpressAccessory {
             this.platform.Characteristic.StatusFault,
             status
         );
-        if (
-            status ===
-            this.platform.Characteristic.StatusFault.GENERAL_FAULT
-        ) {
+        if (status === this.platform.Characteristic.StatusFault.GENERAL_FAULT) {
             this.platform.log.warn(
                 `${this.accessory.context.device.displayName} is not reachable.`
             );
-            this.setConnectStatus(this.platform.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+            this.setConnectStatus(
+                this.platform.Characteristic.OccupancyDetected
+                    .OCCUPANCY_NOT_DETECTED
+            );
         } else {
             this.platform.log.info(
                 `${this.accessory.context.device.displayName} is reachable.`
