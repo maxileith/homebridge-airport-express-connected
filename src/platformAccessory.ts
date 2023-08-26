@@ -10,6 +10,7 @@ import { mDNSReply } from "./settings";
  */
 export default class AirportExpressAccessory {
     private service: Service;
+    private prevStatus: 0 | 1;
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -46,9 +47,10 @@ export default class AirportExpressAccessory {
             `Airport Express device ${this.accessory.context.device.displayName} (serial number: ${this.accessory.context.device.serialNumber} created!`
         );
 
-        this.setConnectStatus(
-            this.isDeviceConnected(this.accessory.context.device.data.txt)
+        this.prevStatus = this.isDeviceConnected(
+            this.accessory.context.device.data.txt
         );
+        this.setConnectStatus(this.prevStatus);
 
         // update the media state periodically
         setInterval(this.updateConnectedStatus.bind(this), 5000);
@@ -105,10 +107,30 @@ export default class AirportExpressAccessory {
     }
 
     setConnectStatus(status: 0 | 1) {
+
+        // exit if there is no status change
+        if (this.prevStatus === status) {
+            return;
+        }
+
         this.service.setCharacteristic(
             this.platform.Characteristic.OccupancyDetected,
             status
         );
+        if (
+            status ===
+            this.platform.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
+        ) {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} is now connected.`
+            );
+        } else {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} is now disconnected.`
+            );
+        }
+
+        this.prevStatus = status;
     }
 
     isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
