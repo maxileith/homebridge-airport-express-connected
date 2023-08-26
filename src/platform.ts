@@ -39,8 +39,22 @@ export default class AirportExpressConnectedPlatform
         // to start discovery of new accessories.
         this.api.on("didFinishLaunching", () => {
             log.debug("Executed didFinishLaunching callback");
+            this.loadCachedDevices();
             this.discoverDevices();
         });
+    }
+
+    loadCachedDevices(): void {
+        for (var accessory of this.accessories) {
+            this.log.info(
+                "Restoring existing accessory from cache: ",
+                accessory.displayName
+            );
+
+            // create the accessory handler for the restored accessory
+            // this is imported from `platformAccessory.ts`
+            new AirportExpressAccessory(this, accessory);
+        }
     }
 
     /**
@@ -68,7 +82,6 @@ export default class AirportExpressConnectedPlatform
             mdnsBrowser.discover();
         });
 
-        var t = false;
         mdnsBrowser.on("update", (data: mDNSReply) => {
             // make sure we are looking at an AirPort Express 2nd Gen.
             if (
@@ -84,10 +97,6 @@ export default class AirportExpressConnectedPlatform
                 data.txt
                     .find((str) => str.indexOf("serialNumber") > -1)
                     ?.replace("serialNumber=", "") || "";
-            const displayName = data.fullname.replace(
-                "._airplay._tcp.local",
-                ""
-            );
 
             // generate distinct ID
             const uuid = this.api.hap.uuid.generate(serialNumber);
@@ -99,46 +108,37 @@ export default class AirportExpressConnectedPlatform
             );
 
             if (existingAccessory) {
-                // the accessory already exists
-                this.log.info(
-                    "Restoring existing accessory from cache: ",
-                    existingAccessory.displayName
-                );
-
-                // create the accessory handler for the restored accessory
-                // this is imported from `platformAccessory.ts`
-                new AirportExpressAccessory(this, existingAccessory);
-            } else {
-                // the accessory does not yet exist, so we need to create it
-                this.log.info("Adding new accessory: ", displayName);
-
-                // create a new accessory
-                const accessory = new this.api.platformAccessory(
-                    displayName,
-                    uuid
-                );
-
-                // store a copy of the device object in the `accessory.context`
-                // the `context` property can be used to store any data about the accessory you may need
-                accessory.context.device = {
-                    serialNumber,
-                    displayName,
-                    data,
-                };
-
-                // create the accessory handler for the newly create accessory
-                // this is imported from `platformAccessory.ts`
-                new AirportExpressAccessory(this, accessory);
-
-                // link the accessory to your platform
-                this.api.registerPlatformAccessories(
-                    PLUGIN_NAME,
-                    PLATFORM_NAME,
-                    [accessory]
-                );
-
-                this.configureAccessory(accessory);
+                return;
             }
+            const displayName = data.fullname.replace(
+                "._airplay._tcp.local",
+                ""
+            );
+
+            // the accessory does not yet exist, so we need to create it
+            this.log.info("Adding new accessory: ", displayName);
+
+            // create a new accessory
+            const accessory = new this.api.platformAccessory(displayName, uuid);
+
+            // store a copy of the device object in the `accessory.context`
+            // the `context` property can be used to store any data about the accessory you may need
+            accessory.context.device = {
+                serialNumber,
+                displayName,
+                data,
+            };
+
+            // create the accessory handler for the newly create accessory
+            // this is imported from `platformAccessory.ts`
+            new AirportExpressAccessory(this, accessory);
+
+            // link the accessory to your platform
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+                accessory,
+            ]);
+
+            this.configureAccessory(accessory);
         });
 
         setTimeout(() => mdnsBrowser.stop(), 5000);

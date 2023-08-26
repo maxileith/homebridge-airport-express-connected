@@ -10,7 +10,8 @@ import { mDNSReply } from "./settings";
  */
 export default class AirportExpressAccessory {
     private service: Service;
-    private prevStatus: 0 | 1;
+    private prevConnectionStatus: 0 | 1;
+    private prevReachableStatus: 0 | 1 = this.platform.Characteristic.StatusFault.NO_FAULT;
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -47,18 +48,18 @@ export default class AirportExpressAccessory {
             `Airport Express device ${this.accessory.context.device.displayName} (serial number: ${this.accessory.context.device.serialNumber} created!`
         );
 
-        this.prevStatus = this.isDeviceConnected(
+        this.prevConnectionStatus = this.isDeviceConnected(
             this.accessory.context.device.data.txt
         );
-        this.setConnectStatus(this.prevStatus);
+        this.setConnectStatus(this.prevConnectionStatus);
 
         // update the media state periodically
-        setInterval(this.updateConnectedStatus.bind(this), 5000);
+        setInterval(this.updateConnectedStatus.bind(this), 2500);
     }
 
     updateConnectedStatus() {
         this.platform.log.debug(
-            `Updating Airport Exrpess with serial number ${this.accessory.context.device.serialNumber}`
+            `Updating Airport Express with serial number ${this.accessory.context.device.serialNumber}`
         );
 
         const mdnsBrowser = mdns.createBrowser(mdns.tcp("airplay"));
@@ -83,6 +84,19 @@ export default class AirportExpressAccessory {
                         );
                         this.setConnectStatus(this.isDeviceConnected(data.txt));
                     }
+
+                    // not reachable
+                    if (foundSerialNumber === undefined) {
+                        this.setReachableStatus(
+                            this.platform.Characteristic.StatusFault
+                                .GENERAL_FAULT
+                        );
+                    } else  {
+                        this.setReachableStatus(
+                            this.platform.Characteristic.StatusFault
+                                .NO_FAULT
+                        );
+                    }
                 }
             } catch (error) {
                 this.platform.log.error(
@@ -96,20 +110,19 @@ export default class AirportExpressAccessory {
             setTimeout(() => {
                 try {
                     // make sure mdnsBrowser was stopped if it was not stopped above
-                    mdnsBrowser.stop();
+                    mdnsBrowser.stop;
                 } catch (err) {
                     this.platform.log.debug(
                         `mdns browser for stop via timeout error: ${err}`
                     );
                 }
-            }, 5000);
+            }, 2500);
         });
     }
 
     setConnectStatus(status: 0 | 1) {
-
         // exit if there is no status change
-        if (this.prevStatus === status) {
+        if (this.prevConnectionStatus === status) {
             return;
         }
 
@@ -122,15 +135,15 @@ export default class AirportExpressAccessory {
             this.platform.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
         ) {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} is now connected.`
+                `${this.accessory.context.device.displayName} has now an active AirPlay connection.`
             );
         } else {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} is now disconnected.`
+                `${this.accessory.context.device.displayName} has no active AirPlay connection.`
             );
         }
 
-        this.prevStatus = status;
+        this.prevConnectionStatus = status;
     }
 
     isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
@@ -153,5 +166,32 @@ export default class AirportExpressAccessory {
             return this.platform.Characteristic.OccupancyDetected
                 .OCCUPANCY_DETECTED;
         }
+    }
+
+    setReachableStatus(status: 0 | 1) {
+        // exit if there is no status change
+        if (this.prevReachableStatus === status) {
+            return;
+        }
+
+        this.service.setCharacteristic(
+            this.platform.Characteristic.StatusFault,
+            status
+        );
+        if (
+            status ===
+            this.platform.Characteristic.StatusFault.GENERAL_FAULT
+        ) {
+            this.platform.log.warn(
+                `${this.accessory.context.device.displayName} is not reachable.`
+            );
+            this.setConnectStatus(this.platform.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+        } else {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} is reachable.`
+            );
+        }
+
+        this.prevReachableStatus = status;
     }
 }
