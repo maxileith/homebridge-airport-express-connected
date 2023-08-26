@@ -36,15 +36,10 @@ export default class AirportExpressAccessory {
 
         // set the service name, this is what is displayed as the default name on the Home app
         // in this case we are using the name we stored in the `accessory.context` in the `discoverDevice
-        this.service
-            .setCharacteristic(
-                this.platform.Characteristic.Name,
-                this.accessory.context.device.displayName
-            )
-            .setCharacteristic(
-                this.platform.Characteristic.OccupancyDetected,
-                false
-            );
+        this.service.setCharacteristic(
+            this.platform.Characteristic.Name,
+            this.accessory.context.device.displayName
+        );
 
         // log that an device has been created
         this.platform.log.info(
@@ -52,7 +47,7 @@ export default class AirportExpressAccessory {
         );
 
         this.setConnectStatus(
-            this.isDeviceConnected(accessory.context.device.data.txt)
+            this.isDeviceConnected(this.accessory.context.device.data.txt)
         );
 
         // update the media state periodically
@@ -109,14 +104,14 @@ export default class AirportExpressAccessory {
         });
     }
 
-    setConnectStatus(status: boolean) {
+    setConnectStatus(status: 0 | 1) {
         this.service.setCharacteristic(
             this.platform.Characteristic.OccupancyDetected,
             status
         );
     }
 
-    isDeviceConnected(mDNS_TXT_record: Array<string>): boolean {
+    isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
         const bit11 = parseInt(
             mDNS_TXT_record
                 .find((r: string) => r.indexOf("flag") > -1)!
@@ -130,9 +125,11 @@ export default class AirportExpressAccessory {
          * see https://github.com/openairplay/airplay-spec/blob/master/src/status_flags.md
          */
         if (bit11 === "0") {
-            return false;
+            return this.platform.Characteristic.OccupancyDetected
+                .OCCUPANCY_NOT_DETECTED;
         } else {
-            return true;
+            return this.platform.Characteristic.OccupancyDetected
+                .OCCUPANCY_DETECTED;
         }
     }
 }

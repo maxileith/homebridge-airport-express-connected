@@ -6,7 +6,6 @@ import {
     PlatformConfig,
     Service,
     Characteristic,
-    Categories,
 } from "homebridge";
 import mdns from "mdns-js";
 import { mDNSReply, PLATFORM_NAME, PLUGIN_NAME } from "./settings";
@@ -48,7 +47,7 @@ export default class AirportExpressConnectedPlatform
      * This function is invoked when homebridge restores cached accessories from disk at startup.
      * It should be used to setup event handlers for characteristics and update respective values.
      */
-    configureAccessory(accessory: PlatformAccessory) {
+    configureAccessory(accessory: PlatformAccessory): void {
         this.log.info("Loading accessory from cache: ", accessory.displayName);
 
         // add the restored accessory to the accessories cache so we can track if it has already been registered
@@ -69,8 +68,9 @@ export default class AirportExpressConnectedPlatform
             mdnsBrowser.discover();
         });
 
+        var t = false;
         mdnsBrowser.on("update", (data: mDNSReply) => {
-            // make sure we are looking at an AirPort Express 2
+            // make sure we are looking at an AirPort Express 2nd Gen.
             if (
                 !data ||
                 !data.txt ||
@@ -136,6 +136,8 @@ export default class AirportExpressConnectedPlatform
                     PLATFORM_NAME,
                     [accessory]
                 );
+
+                this.configureAccessory(accessory);
             }
         });
 
