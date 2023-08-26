@@ -14,6 +14,9 @@ export default class AirportExpressAccessory {
     private prevReachableStatus: 0 | 1 =
         this.platform.Characteristic.StatusFault.NO_FAULT;
 
+    private disconnectTries: number = 0;
+    private MAX_DISCONNECT_TRIES: number = 5;
+
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
         private readonly accessory: PlatformAccessory
@@ -55,7 +58,7 @@ export default class AirportExpressAccessory {
         this.setConnectStatus(this.prevConnectionStatus);
 
         // update the media state periodically
-        setInterval(this.updateConnectedStatus.bind(this), 2500);
+        setInterval(this.updateConnectedStatus.bind(this), 5000);
     }
 
     updateConnectedStatus() {
@@ -87,11 +90,15 @@ export default class AirportExpressAccessory {
                         this.setReachableStatus(
                             this.platform.Characteristic.StatusFault.NO_FAULT
                         );
+                        this.disconnectTries = 0;
                     } else {
-                        this.setReachableStatus(
-                            this.platform.Characteristic.StatusFault
-                                .GENERAL_FAULT
-                        );
+                        this.disconnectTries++;
+                        if (this.disconnectTries > this.MAX_DISCONNECT_TRIES) {
+                            this.setReachableStatus(
+                                this.platform.Characteristic.StatusFault
+                                    .GENERAL_FAULT
+                            );
+                        }
                     }
                 }
             } catch (error) {
@@ -112,7 +119,7 @@ export default class AirportExpressAccessory {
                         `mdns browser for stop via timeout error: ${err}`
                     );
                 }
-            }, 2500);
+            }, 5000);
         });
     }
 
