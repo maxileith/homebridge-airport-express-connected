@@ -6,7 +6,7 @@ export const PLATFORM_NAME = "AirportExpressConnected";
 /**
  * This must match the name of your plugin as defined the package.json
  */
-export const PLUGIN_NAME = "@maxileith/homebridge-airport-express-connected";
+export const PLUGIN_NAME = "homebridge-airport-express-connected";
 
 export interface mDNSReply {
     txt: Array<string>;
