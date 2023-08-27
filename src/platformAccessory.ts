@@ -15,7 +15,7 @@ export default class AirportExpressAccessory {
         this.platform.Characteristic.StatusFault.NO_FAULT;
 
     private disconnectTries: number = 0;
-    private MAX_DISCONNECT_TRIES: number = 5;
+    private MAX_DISCONNECT_TRIES: number = 15;
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
