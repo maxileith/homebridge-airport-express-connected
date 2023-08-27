@@ -2,7 +2,7 @@
     "pluginAlias": "AirportExpressConnected",
     "pluginType": "platform",
     "singular": true,
-    "headerDisplay": "This plugin will automatically detect any Airport Express devices on your network.",
+    "headerDisplay": "omebridge plugin that uses mDNS request data to show a occupancy sensor that is activated when connecting to an airport express devices via AirPlay 2.",
     "schema": {
         "type": "object",
         "properties": {
