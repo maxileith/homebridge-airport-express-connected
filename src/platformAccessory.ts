@@ -15,7 +15,7 @@ export default class AirportExpressAccessory {
         this.platform.Characteristic.StatusFault.NO_FAULT;
 
     private disconnectTries: number = 0;
-    private MAX_DISCONNECT_TRIES: number = 15;
+    private MAX_DISCONNECT_TRIES: number = 24;
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -58,7 +58,7 @@ export default class AirportExpressAccessory {
         this.setConnectStatus(this.prevConnectionStatus);
 
         // update the media state periodically
-        setInterval(this.updateConnectedStatus.bind(this), 5000);
+        setInterval(this.updateConnectedStatus.bind(this), 2500);
     }
 
     updateConnectedStatus() {
@@ -91,6 +91,7 @@ export default class AirportExpressAccessory {
                             this.platform.Characteristic.StatusFault.NO_FAULT
                         );
                         this.disconnectTries = 0;
+                        mdnsBrowser.stop();
                     } else {
                         this.disconnectTries++;
                         if (this.disconnectTries > this.MAX_DISCONNECT_TRIES) {
@@ -106,20 +107,19 @@ export default class AirportExpressAccessory {
                     `Error in mDNS check, found invalid record`
                 );
                 this.platform.log.debug(error as string);
-            } finally {
                 mdnsBrowser.stop();
             }
 
             setTimeout(() => {
                 try {
                     // make sure mdnsBrowser was stopped if it was not stopped above
-                    mdnsBrowser.stop;
+                    mdnsBrowser.stop();
                 } catch (err) {
                     this.platform.log.debug(
                         `mdns browser for stop via timeout error: ${err}`
                     );
                 }
-            }, 5000);
+            }, 2500);
         });
     }
 
