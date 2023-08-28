@@ -151,7 +151,6 @@ export default class AirportExpressAccessory {
     }
 
     isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
-        this.platform.log.warn(mDNS_TXT_record as unknown as string);
         const flagsHex: string = mDNS_TXT_record
             .find((r: string) => r.indexOf("flag") > -1)!
             .replace("flags=", "");

@@ -92,14 +92,14 @@ export default class AirportExpressConnectedPlatform
                 return;
             }
 
-            // extract meta information
-            const serialNumber =
+            // extract serial number
+            const serialNumber: string =
                 data.txt
                     .find((str) => str.indexOf("serialNumber") > -1)
                     ?.replace("serialNumber=", "") || "";
 
             // generate distinct ID
-            const uuid = this.api.hap.uuid.generate(serialNumber);
+            const uuid: string = this.api.hap.uuid.generate(serialNumber);
 
             // see if an accessory with the same uuid has already been registered and restored from
             // the cached devices we stored in the `configureAccessory` method above
@@ -111,9 +111,13 @@ export default class AirportExpressConnectedPlatform
                 return;
             }
             if (!data.fullname.includes("._airplay._tcp.local")) {
-                this.log.debug(`Fullname "${data.fullname}" is invalid. Not adding as an accessory.`);
+                this.log.debug(
+                    `Fullname "${data.fullname}" is invalid. Not adding as an accessory.`
+                );
                 return;
             }
+
+            // extract additional meta information
             const displayName = data.fullname.replace(
                 "._airplay._tcp.local",
                 ""
@@ -130,7 +134,7 @@ export default class AirportExpressConnectedPlatform
             accessory.context.device = {
                 serialNumber,
                 displayName,
-                data,
+                data
             };
 
             // create the accessory handler for the newly create accessory
