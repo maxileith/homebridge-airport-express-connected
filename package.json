@@ -1,7 +1,7 @@
 {
     "name": "homebridge-airport-express-connected",
     "displayName": "Airport Express Connected",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Homebridge plugin that uses mDNS request data to show a occupancy sensor that is activated when connecting to an airport express devices via AirPlay 2.",
     "main": "dist/index.js",
     "author": "Maximilian Leith",
@@ -45,5 +45,12 @@
     },
     "dependencies": {
         "mdns-js": "^1.0.3"
-    }
+    },
+    "homepage": "https://github.com/maxileith/homebridge-airport-express-connected#readme",
+    "funding": [
+        {
+            "type": "paypal",
+            "url": "https://www.paypal.me/maxileith/EUR"
+        }
+    ]
 }
