@@ -140,7 +140,5 @@ export default class AirportExpressConnectedPlatform
 
             this.configureAccessory(accessory);
         });
-
-        setTimeout(() => mdnsBrowser.stop(), 2500);
     }
 }
