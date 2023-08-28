@@ -14,8 +14,9 @@ export default class AirportExpressAccessory {
     private prevReachableStatus: 0 | 1 =
         this.platform.Characteristic.StatusFault.NO_FAULT;
 
-    private disconnectTries: number = 0;
-    private MAX_DISCONNECT_TRIES: number = 24;
+    private secondsUntilReportedAsOffline: number = 60;
+    private lastOnline: number =
+        Date.now() / 1000 - (this.secondsUntilReportedAsOffline - 10);
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -57,7 +58,7 @@ export default class AirportExpressAccessory {
         );
         this.setConnectStatus(this.prevConnectionStatus);
 
-        // update the media state periodically
+        // update the connection state periodically
         setInterval(this.updateConnectedStatus.bind(this), 2500);
     }
 
@@ -90,16 +91,16 @@ export default class AirportExpressAccessory {
                         this.setReachableStatus(
                             this.platform.Characteristic.StatusFault.NO_FAULT
                         );
-                        this.disconnectTries = 0;
+                        this.lastOnline = Date.now() / 1000;
                         mdnsBrowser.stop();
-                    } else {
-                        this.disconnectTries++;
-                        if (this.disconnectTries > this.MAX_DISCONNECT_TRIES) {
-                            this.setReachableStatus(
-                                this.platform.Characteristic.StatusFault
-                                    .GENERAL_FAULT
-                            );
-                        }
+                    } else if (
+                        this.lastOnline + this.secondsUntilReportedAsOffline <
+                        Date.now() / 1000
+                    ) {
+                        this.setReachableStatus(
+                            this.platform.Characteristic.StatusFault
+                                .GENERAL_FAULT
+                        );
                     }
                 }
             } catch (error) {
