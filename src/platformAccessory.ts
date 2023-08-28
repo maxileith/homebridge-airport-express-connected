@@ -151,19 +151,18 @@ export default class AirportExpressAccessory {
     }
 
     isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
-        const bit11 = parseInt(
-            mDNS_TXT_record
-                .find((r: string) => r.indexOf("flag") > -1)!
-                .replace("flags=", ""),
-            16
-        )
-            .toString(2)
-            .padStart(12, "0")
-            .charAt(0);
-        /* bit11 correspponds to playing
-         * see https://github.com/openairplay/airplay-spec/blob/master/src/status_flags.md
+        this.platform.log.warn(mDNS_TXT_record as unknown as string);
+        const flagsHex: string = mDNS_TXT_record
+            .find((r: string) => r.indexOf("flag") > -1)!
+            .replace("flags=", "");
+        const flagsBits: string = this.hexStringToBitString(flagsHex);
+
+        /* bit11 corresponds to playing
+         * see https://openairplay.github.io/airplay-spec/status_flags.html
          */
-        if (bit11 === "0") {
+        this.platform.log.debug(`Flags: ${flagsBits}`);
+        const bit11: boolean = flagsBits.charAt(11) === "1";
+        if (bit11 === false) {
             return this.platform.Characteristic.OccupancyDetected
                 .OCCUPANCY_NOT_DETECTED;
         } else {
@@ -197,5 +196,15 @@ export default class AirportExpressAccessory {
         }
 
         this.prevReachableStatus = status;
+    }
+
+    hexStringToBitString(hex: string): string {
+        return this.reverseString(
+            parseInt(hex, 16).toString(2).padStart(20, "0")
+        );
+    }
+
+    reverseString(value: string): string {
+        return value.split("").reverse().join("");
     }
 }
