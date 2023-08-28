@@ -1,6 +1,7 @@
 # homebridge-airport-express-connected
 
 [![mit license](https://badgen.net/badge/license/MIT/red)](https://github.com/maxileith/homebridge-airport-express-connected/blob/master/LICENSE)
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 [![npm](https://img.shields.io/npm/v/homebridge-airport-express-connected)](https://www.npmjs.com/package/homebridge-airport-express-connected)
 [![npm](https://badgen.net/npm/dt/homebridge-airport-express-connected)](https://www.npmjs.com/package/homebridge-airport-express-connected)
 [![donate](https://badgen.net/badge/donate/paypal/91BE09)](https://www.paypal.me/maxileith)

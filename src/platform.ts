@@ -78,7 +78,7 @@ export default class AirportExpressConnectedPlatform
 
         // discover devices
         mdnsBrowser.on("ready", () => {
-            this.log.info("Searching for Airport Express devices");
+            this.log.info("Searching for AirPort Express devices");
             mdnsBrowser.discover();
         });
 
@@ -110,9 +110,9 @@ export default class AirportExpressConnectedPlatform
             if (existingAccessory) {
                 return;
             }
-            if (!data.fullname.includes("._airplay._tcp.local")) {
+            if (!data.fullname || !data.fullname.includes("._airplay._tcp.local")) {
                 this.log.debug(
-                    `Fullname "${data.fullname}" is invalid. Not adding as an accessory.`
+                    `Fullname "${data.fullname as string}" is invalid. Not adding as an accessory.`
                 );
                 return;
             }

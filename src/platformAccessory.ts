@@ -50,7 +50,7 @@ export default class AirportExpressAccessory {
 
         // log that an device has been created
         this.platform.log.info(
-            `Airport Express device ${this.accessory.context.device.displayName} (serial number: ${this.accessory.context.device.serialNumber} created!`
+            `AirPort Express device ${this.accessory.context.device.displayName} (serial number: ${this.accessory.context.device.serialNumber} created!`
         );
 
         this.prevConnectionStatus = this.isDeviceConnected(
@@ -64,7 +64,7 @@ export default class AirportExpressAccessory {
 
     updateConnectedStatus() {
         this.platform.log.debug(
-            `Updating Airport Express with serial number ${this.accessory.context.device.serialNumber}`
+            `Updating AirPort Express with serial number ${this.accessory.context.device.serialNumber}`
         );
 
         const mdnsBrowser = mdns.createBrowser(mdns.tcp("airplay"));
