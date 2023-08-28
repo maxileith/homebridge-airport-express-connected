@@ -110,6 +110,10 @@ export default class AirportExpressConnectedPlatform
             if (existingAccessory) {
                 return;
             }
+            if (!data.fullname.includes("._airplay._tcp.local")) {
+                this.log.debug(`Fullname "${data.fullname}" is invalid. Not adding as an accessory.`);
+                return;
+            }
             const displayName = data.fullname.replace(
                 "._airplay._tcp.local",
                 ""
