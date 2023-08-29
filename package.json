@@ -47,10 +47,8 @@
         "mdns-js": "^1.0.3"
     },
     "homepage": "https://github.com/maxileith/homebridge-airport-express-connected#readme",
-    "funding": [
-        {
-            "type": "paypal",
-            "url": "https://www.paypal.me/maxileith/EUR"
-        }
-    ]
+    "funding": {
+        "type": "paypal",
+        "url": "https://www.paypal.me/maxileith/EUR"
+    }
 }
