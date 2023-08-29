@@ -84,6 +84,20 @@ export default class AirportExpressAccessory {
                         this.accessory.context.device.serialNumber ===
                             foundSerialNumber
                     ) {
+                        const newDisplayName: string = data.fullname.replace(
+                            "._airplay._tcp.local",
+                            ""
+                        );
+                        if (
+                            this.accessory.context.device.displayName !==
+                            newDisplayName
+                        ) {
+                            this.platform.log.info(
+                                `Renaming ${this.accessory.context.device.displayName} to ${newDisplayName} since the AirPlay speaker name was changed.`
+                            );
+                            this.accessory.context.device.displayName = newDisplayName;
+                            this.service.setCharacteristic(this.platform.Characteristic.Name, newDisplayName);
+                        }
                         this.platform.log.debug(
                             `txt record contents: ${data.txt}`
                         );
