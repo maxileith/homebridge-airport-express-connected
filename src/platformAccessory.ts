@@ -10,9 +10,7 @@ import { mDNSReply } from "./settings";
  */
 export default class AirportExpressAccessory {
     private service: Service;
-    private prevConnectionStatus: 0 | 1;
-    private prevReachableStatus: 0 | 1 =
-        this.platform.Characteristic.StatusFault.NO_FAULT;
+    private accessoryInformation: Service;
 
     private secondsUntilReportedAsOffline: number = 60;
     private lastOnline: number =
@@ -23,7 +21,7 @@ export default class AirportExpressAccessory {
         private readonly accessory: PlatformAccessory
     ) {
         // set accessory information
-        this.accessory
+        this.accessoryInformation = this.accessory
             .getService(this.platform.Service.AccessoryInformation)!
             .setCharacteristic(
                 this.platform.Characteristic.Manufacturer,
@@ -53,11 +51,6 @@ export default class AirportExpressAccessory {
             `AirPort Express device ${this.accessory.context.device.displayName} (serial number: ${this.accessory.context.device.serialNumber} created!`
         );
 
-        this.prevConnectionStatus = this.isDeviceConnected(
-            this.accessory.context.device.data.txt
-        );
-        this.setConnectStatus(this.prevConnectionStatus);
-
         // update the connection state periodically
         setInterval(this.updateConnectedStatus.bind(this), 2500);
     }
@@ -85,6 +78,7 @@ export default class AirportExpressAccessory {
                             foundSerialNumber
                     ) {
                         this.changeName(data.fullname);
+                        this.changeFirmware(data.txt);
                         this.platform.log.debug(
                             `txt record contents: ${data.txt}`
                         );
@@ -127,7 +121,11 @@ export default class AirportExpressAccessory {
 
     setConnectStatus(status: 0 | 1) {
         // exit if there is no status change
-        if (this.prevConnectionStatus === status) {
+        if (
+            this.service.getCharacteristic(
+                this.platform.Characteristic.OccupancyDetected
+            ).value === status
+        ) {
             return;
         }
 
@@ -147,8 +145,6 @@ export default class AirportExpressAccessory {
                 `${this.accessory.context.device.displayName} has no active AirPlay connection.`
             );
         }
-
-        this.prevConnectionStatus = status;
     }
 
     isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
@@ -173,7 +169,11 @@ export default class AirportExpressAccessory {
 
     setReachableStatus(status: 0 | 1) {
         // exit if there is no status change
-        if (this.prevReachableStatus === status) {
+        if (
+            this.service.getCharacteristic(
+                this.platform.Characteristic.StatusFault
+            ).value === status
+        ) {
             return;
         }
 
@@ -194,8 +194,6 @@ export default class AirportExpressAccessory {
                 `${this.accessory.context.device.displayName} is reachable.`
             );
         }
-
-        this.prevReachableStatus = status;
     }
 
     hexStringToBitString(hex: string): string {
@@ -209,18 +207,40 @@ export default class AirportExpressAccessory {
     }
 
     changeName(fullname: string): void {
-        const newDisplayName: string = fullname.replace(
+        const displayName: string = fullname.replace(
             "._airplay._tcp.local",
             ""
         );
-        if (this.accessory.context.device.displayName !== newDisplayName) {
+        if (this.accessory.context.device.displayName !== displayName) {
             this.platform.log.info(
-                `Renaming "${this.accessory.context.device.displayName}" to "${newDisplayName}" since the AirPlay speaker name was changed.`
+                `Renaming "${this.accessory.context.device.displayName}" to "${displayName}" since the AirPlay speaker name was changed.`
             );
-            this.accessory.context.device.displayName = newDisplayName;
+            this.accessory.context.device.displayName = displayName;
             this.service.setCharacteristic(
                 this.platform.Characteristic.Name,
-                newDisplayName
+                displayName
+            );
+        }
+    }
+
+    changeFirmware(mDNS_TXT_record: Array<string>): void {
+        var firmwareVersion: string = mDNS_TXT_record
+            .find((r: string) => r.indexOf("fv") > -1)!
+            .replace("fv=", "");
+
+        firmwareVersion =
+            firmwareVersion === "p20.78100.3" ? "7.8.1" : firmwareVersion;
+        const prevFirmwareVersion = this.accessoryInformation.getCharacteristic(
+            this.platform.Characteristic.FirmwareRevision
+        ).value;
+
+        if (firmwareVersion !== prevFirmwareVersion) {
+            this.platform.log.info(
+                `Set Firmware of ${this.accessory.context.device.displayName} to "${firmwareVersion}".`
+            );
+            this.accessoryInformation.setCharacteristic(
+                this.platform.Characteristic.FirmwareRevision,
+                firmwareVersion
             );
         }
     }
