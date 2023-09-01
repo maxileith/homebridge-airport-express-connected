@@ -40,7 +40,9 @@ export default class AirportExpressConnectedPlatform
         this.api.on("didFinishLaunching", () => {
             log.debug("Executed didFinishLaunching callback");
             this.loadCachedDevices();
-            this.discoverDevices();
+
+            // discover devices periodically
+            setInterval(this.discoverDevices.bind(this), 20000);
         });
     }
 
@@ -148,5 +150,15 @@ export default class AirportExpressConnectedPlatform
 
             this.configureAccessory(accessory);
         });
+
+        setTimeout(() => {
+            try {
+                mdnsBrowser.stop();
+            } catch (err) {
+                this.log.debug(
+                    `mens for stop via timeout error: ${err}`
+                );
+            }
+        }, 5000);
     }
 }

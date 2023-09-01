@@ -105,18 +105,17 @@ export default class AirportExpressAccessory {
                 this.platform.log.debug(error as string);
                 mdnsBrowser.stop();
             }
-
-            setTimeout(() => {
-                try {
-                    // make sure mdnsBrowser was stopped if it was not stopped above
-                    mdnsBrowser.stop();
-                } catch (err) {
-                    this.platform.log.debug(
-                        `mdns browser for stop via timeout error: ${err}`
-                    );
-                }
-            }, 2500);
         });
+
+        setTimeout(() => {
+            try {
+                mdnsBrowser.stop();
+            } catch (err) {
+                this.platform.log.debug(
+                    `mdns browser for stop via timeout error: ${err}`
+                );
+            }
+        }, 2500);
     }
 
     setConnectStatus(status: 0 | 1) {
