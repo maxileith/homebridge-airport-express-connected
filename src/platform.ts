@@ -42,7 +42,8 @@ export default class AirportExpressConnectedPlatform
             this.loadCachedDevices();
 
             // discover devices periodically
-            setInterval(this.discoverDevices.bind(this), 20000);
+            this.discoverDevices();
+            setInterval(this.discoverDevices.bind(this), 30000);
         });
     }
 
@@ -80,7 +81,7 @@ export default class AirportExpressConnectedPlatform
 
         // discover devices
         mdnsBrowser.on("ready", () => {
-            this.log.info("Searching for AirPort Express devices");
+            this.log.debug("Searching for AirPort Express devices");
             mdnsBrowser.discover();
         });
 

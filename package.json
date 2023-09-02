@@ -26,7 +26,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git://github.com/maxileith/homebridge-airport-express-connected"
+        "url": "git://github.com/maxileith/homebridge-airport-express-connected.git"
     },
     "bugs": {
         "url": "http://github.com/maxileith/homebridge-airport-express-connected/issues"
