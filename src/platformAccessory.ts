@@ -74,7 +74,7 @@ export default class AirportExpressAccessory {
         const mdnsBrowser = mdns.createBrowser(mdns.tcp("airplay"));
 
         mdnsBrowser.on("ready", () => {
-            this.platform.log.debug(`${this.accessory.context.device.displayName} Update: Starting discovery with browser`);
+            this.platform.log.debug(`${this.accessory.context.device.displayName} - Update: Starting discovery with browser`);
             mdnsBrowser.discover();
         });
 
@@ -218,7 +218,7 @@ export default class AirportExpressAccessory {
             ).value === status
         ) {
             this.platform.log.debug(
-                `${this.accessory.context.device.displayName} - Update: Reachabel status unchanged: ${status ? "unreachable" : "reachable"}`
+                `${this.accessory.context.device.displayName} - Update: Reachable status unchanged: ${status ? "unreachable" : "reachable"}`
             );
             return;
         }
