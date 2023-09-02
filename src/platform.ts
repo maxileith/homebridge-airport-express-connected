@@ -50,7 +50,7 @@ export default class AirportExpressConnectedPlatform
     loadCachedDevices(): void {
         for (var accessory of this.accessories) {
             this.log.info(
-                "Cacahe: Restoring existing accessory from cache: ",
+                "Cache: Restoring existing accessory from cache: ",
                 accessory.displayName
             );
 
