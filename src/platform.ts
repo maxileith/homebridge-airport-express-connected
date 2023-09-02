@@ -17,8 +17,7 @@ import AirportExpressAccessory from "./platformAccessory";
  * parse the user config and discover/register accessories with Homebridge.
  */
 export default class AirportExpressConnectedPlatform
-    implements DynamicPlatformPlugin
-{
+    implements DynamicPlatformPlugin {
     public readonly Service: typeof Service = this.api.hap.Service;
     public readonly Characteristic: typeof Characteristic =
         this.api.hap.Characteristic;
@@ -42,6 +41,7 @@ export default class AirportExpressConnectedPlatform
             this.loadCachedDevices();
 
             // discover devices periodically
+            this.log.info('Searching for AirPort Express devices');
             this.discoverDevices();
             setInterval(this.discoverDevices.bind(this), 30000);
         });
@@ -50,13 +50,14 @@ export default class AirportExpressConnectedPlatform
     loadCachedDevices(): void {
         for (var accessory of this.accessories) {
             this.log.info(
-                "Restoring existing accessory from cache: ",
+                "Cacahe: Restoring existing accessory from cache: ",
                 accessory.displayName
             );
 
             // create the accessory handler for the restored accessory
             // this is imported from `platformAccessory.ts`
             new AirportExpressAccessory(this, accessory);
+            this.log.debug("Finished restoring accessory from cache: ", accessory.displayName);
         }
     }
 
@@ -65,10 +66,11 @@ export default class AirportExpressConnectedPlatform
      * It should be used to setup event handlers for characteristics and update respective values.
      */
     configureAccessory(accessory: PlatformAccessory): void {
-        this.log.info("Loading accessory from cache: ", accessory.displayName);
+        this.log.info(`Cache: Loading accessory ${accessory.displayName}`);
 
         // add the restored accessory to the accessories cache so we can track if it has already been registered
         this.accessories.push(accessory);
+        this.log.debug(`Cache: Finished loading accessory ${accessory.displayName}`);
     }
 
     /**
@@ -77,11 +79,12 @@ export default class AirportExpressConnectedPlatform
      * must not be registered again to prevent "duplicate UUID" errors.
      */
     discoverDevices() {
+        this.log.debug("Discovery: Creating browser");
         const mdnsBrowser = mdns.createBrowser(mdns.tcp("airplay"));
 
         // discover devices
         mdnsBrowser.on("ready", () => {
-            this.log.debug("Searching for AirPort Express devices");
+            this.log.debug("Discovery: Starting discovery with browser");
             mdnsBrowser.discover();
         });
 
@@ -103,6 +106,7 @@ export default class AirportExpressConnectedPlatform
 
             // generate distinct ID
             const uuid: string = this.api.hap.uuid.generate(serialNumber);
+            this.log.debug(`Discovery: AirPort Express with serial number ${serialNumber} found. Generated uuid ${uuid}.`);
 
             // see if an accessory with the same uuid has already been registered and restored from
             // the cached devices we stored in the `configureAccessory` method above
@@ -111,11 +115,12 @@ export default class AirportExpressConnectedPlatform
             );
 
             if (existingAccessory) {
+                this.log.debug(`Discovery: AirPort Express with uuid ${uuid} already exists.`);
                 return;
             }
             if (!data.fullname || !data.fullname.includes("._airplay._tcp.local")) {
                 this.log.debug(
-                    `Fullname "${data.fullname as string}" is invalid. Not adding as an accessory.`
+                    `Dicovery: Fullname "${data.fullname as string}" is invalid. Not adding as an accessory.`
                 );
                 return;
             }
@@ -127,7 +132,7 @@ export default class AirportExpressConnectedPlatform
             );
 
             // the accessory does not yet exist, so we need to create it
-            this.log.info("Adding new accessory: ", displayName);
+            this.log.info("Discovery: Adding new accessory ", displayName);
 
             // create a new accessory
             const accessory = new this.api.platformAccessory(displayName, uuid);
@@ -150,14 +155,17 @@ export default class AirportExpressConnectedPlatform
             ]);
 
             this.configureAccessory(accessory);
+
+            this.log.debug(`Discovery: Finished creating and configuring accessory ${displayName}`);
         });
 
         setTimeout(() => {
             try {
+                this.log.debug("Discovery: Stopping browser");
                 mdnsBrowser.stop();
             } catch (err) {
                 this.log.debug(
-                    `mens for stop via timeout error: ${err}`
+                    `Discovery: Error during stopping the browser: ${err}`
                 );
             }
         }, 5000);
