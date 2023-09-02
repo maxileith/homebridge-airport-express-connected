@@ -20,6 +20,10 @@ export default class AirportExpressAccessory {
         private readonly platform: AirportExpressConnectedPlatform,
         private readonly accessory: PlatformAccessory
     ) {
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Accessory: Constructing`
+        );
+
         // set accessory information
         this.accessoryInformation = this.accessory
             .getService(this.platform.Service.AccessoryInformation)!
@@ -48,21 +52,31 @@ export default class AirportExpressAccessory {
 
         // log that an device has been created
         this.platform.log.info(
-            `AirPort Express device ${this.accessory.context.device.displayName} (serial number: ${this.accessory.context.device.serialNumber} created!`
+            `${this.accessory.context.device.displayName} - Accessory: AirPort Express device with serial number ${this.accessory.context.device.serialNumber} created!`
         );
 
         // update the connection state periodically
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Accessory: Starting update loop`
+        );
+        this.updateConnectedStatus();
         setInterval(this.updateConnectedStatus.bind(this), 2500);
     }
 
     updateConnectedStatus() {
+        var found: boolean = false;
+
         this.platform.log.debug(
-            `Updating AirPort Express with serial number ${this.accessory.context.device.serialNumber}`
+            `${this.accessory.context.device.displayName} - Update: AirPort Express with serial number ${this.accessory.context.device.serialNumber}`
         );
 
+        this.platform.log.debug(`${this.accessory.context.device.displayName} - Update: Creating browser`);
         const mdnsBrowser = mdns.createBrowser(mdns.tcp("airplay"));
 
-        mdnsBrowser.on("ready", () => mdnsBrowser.discover());
+        mdnsBrowser.on("ready", () => {
+            this.platform.log.debug(`${this.accessory.context.device.displayName} Update: Starting discovery with browser`);
+            mdnsBrowser.discover();
+        });
 
         mdnsBrowser.on("update", (data: mDNSReply) => {
             try {
@@ -77,16 +91,24 @@ export default class AirportExpressAccessory {
                         this.accessory.context.device.serialNumber ===
                             foundSerialNumber
                     ) {
-                        this.changeName(data.fullname);
-                        this.changeFirmware(data.txt);
                         this.platform.log.debug(
-                            `txt record contents: ${data.txt}`
+                            `${this.accessory.context.device.displayName} - Update: Got mDNS reply from correct device with serial number ${this.accessory.context.device.serialNumber}`
                         );
+                        this.changeName(data.fullname);
+                        this.platform.log.debug(
+                            `${this.accessory.context.device.displayName} - Update: txt record contents: ${data.txt}`
+                        );
+                        this.changeFirmware(data.txt);
                         this.setConnectStatus(this.isDeviceConnected(data.txt));
                         this.setReachableStatus(
                             this.platform.Characteristic.StatusFault.NO_FAULT
                         );
                         this.lastOnline = Date.now() / 1000;
+
+                        this.platform.log.debug(
+                            `${this.accessory.context.device.displayName} - Update: Stopping browser`
+                        );
+                        found = true;
                         mdnsBrowser.stop();
                     } else if (
                         this.lastOnline + this.secondsUntilReportedAsOffline <
@@ -100,19 +122,28 @@ export default class AirportExpressAccessory {
                 }
             } catch (error) {
                 this.platform.log.error(
-                    `Error in mDNS check, found invalid record`
+                    `${this.accessory.context.device.displayName} - Update: Error in mDNS check, found invalid record`
                 );
                 this.platform.log.debug(error as string);
+                this.platform.log.debug(
+                    `${this.accessory.context.device.displayName} - Update: Stopping browser`
+                );
                 mdnsBrowser.stop();
             }
         });
 
         setTimeout(() => {
             try {
+                if (!found) {
+                    const secondsOffline: number = Math.round(Date.now() / 1000 - this.lastOnline);
+                    this.platform.log.debug(
+                        `${this.accessory.context.device.displayName} - Update: Device did not respond to the mDNS disovery. The device is no respondig since ${secondsOffline} seconds.`
+                    );
+                }
                 mdnsBrowser.stop();
             } catch (err) {
                 this.platform.log.debug(
-                    `mdns browser for stop via timeout error: ${err}`
+                    `${this.accessory.context.device.displayName} - Update: Error during stopping the browser: ${err}`
                 );
             }
         }, 2500);
@@ -125,6 +156,9 @@ export default class AirportExpressAccessory {
                 this.platform.Characteristic.OccupancyDetected
             ).value === status
         ) {
+            this.platform.log.debug(
+                `${this.accessory.context.device.displayName} - Update: Connection Status unchanged: ${status ? "connected" : "disconnected"}`
+            );
             return;
         }
 
@@ -137,11 +171,11 @@ export default class AirportExpressAccessory {
             this.platform.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
         ) {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} has now an active AirPlay connection.`
+                `${this.accessory.context.device.displayName} - Update: Has now an active AirPlay connection.`
             );
         } else {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} has no active AirPlay connection.`
+                `${this.accessory.context.device.displayName} - Update: Has no active AirPlay connection.`
             );
         }
     }
@@ -150,13 +184,23 @@ export default class AirportExpressAccessory {
         const flagsHex: string = mDNS_TXT_record
             .find((r: string) => r.indexOf("flag") > -1)!
             .replace("flags=", "");
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Flags hex ${flagsHex}`
+        );
+
         const flagsBits: string = this.hexStringToBitString(flagsHex);
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Flags Bits ${flagsBits}`
+        );
 
         /* bit11 corresponds to playing
          * see https://openairplay.github.io/airplay-spec/status_flags.html
          */
-        this.platform.log.debug(`Flags: ${flagsBits}`);
         const bit11: boolean = flagsBits.charAt(11) === "1";
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Bit 11 is "${bit11}"`
+        );
+
         if (bit11 === false) {
             return this.platform.Characteristic.OccupancyDetected
                 .OCCUPANCY_NOT_DETECTED;
@@ -173,6 +217,9 @@ export default class AirportExpressAccessory {
                 this.platform.Characteristic.StatusFault
             ).value === status
         ) {
+            this.platform.log.debug(
+                `${this.accessory.context.device.displayName} - Update: Reachabel status unchanged: ${status ? "unreachable" : "reachable"}`
+            );
             return;
         }
 
@@ -182,7 +229,7 @@ export default class AirportExpressAccessory {
         );
         if (status === this.platform.Characteristic.StatusFault.GENERAL_FAULT) {
             this.platform.log.warn(
-                `${this.accessory.context.device.displayName} is not reachable.`
+                `${this.accessory.context.device.displayName} - Update: unreachable`
             );
             this.setConnectStatus(
                 this.platform.Characteristic.OccupancyDetected
@@ -190,7 +237,7 @@ export default class AirportExpressAccessory {
             );
         } else {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} is reachable.`
+                `${this.accessory.context.device.displayName} - Update: reachable`
             );
         }
     }
@@ -212,12 +259,16 @@ export default class AirportExpressAccessory {
         );
         if (this.accessory.context.device.displayName !== displayName) {
             this.platform.log.info(
-                `Renaming "${this.accessory.context.device.displayName}" to "${displayName}" since the AirPlay speaker name was changed.`
+                `${this.accessory.context.device.displayName} - Update: Renaming to "${displayName}" since the AirPlay speaker fullname was changed.`
             );
             this.accessory.context.device.displayName = displayName;
             this.service.setCharacteristic(
                 this.platform.Characteristic.Name,
                 displayName
+            );
+        } else {
+            this.platform.log.debug(
+                `${this.accessory.context.device.displayName} - Update: Name unchanged.`
             );
         }
     }
