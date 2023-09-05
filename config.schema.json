@@ -2,6 +2,8 @@
     "pluginAlias": "AirportExpressConnected",
     "pluginType": "platform",
     "singular": true,
+    "headerDisplay" : "# AirPort Express Connected \n\n Plugin that creates an occupancy sensor that shows wether or not there is an active AirPlay 2 connection to AirPort Express (2nd Gen.) devices. \n\n This plugin is supposed to be a painless experience. There is **no configuration required**. Just install and start the plugin. Devices will be automatically discovered and sensors created. Tweaking the configuration is completely optional. \n\n Provided with ❤ by [maxileith](https://github.com/maxileith).",
+    "footerDisplay": "Provided with ❤ by [maxileith](https://github.com/maxileith).",
     "schema": {
         "type": "object",
         "properties": {
@@ -10,10 +12,12 @@
                 "type": "string",
                 "default": "Airport Express Connected",
                 "placeholder": "Airport Express Connected",
-                "required": true
+                "required": true,
+                "description": "The name of the plugin, e.g. shown in the logs."
             },
             "update": {
                 "title": "Update settings",
+                "description": "All settings that affect the detection of state changes of AirPort Express devices:",
                 "type": "object",
                 "properties": {
                     "refreshRate": {
@@ -23,7 +27,8 @@
                         "default": 3,
                         "required": false,
                         "minimum": 1,
-                        "maximum": 60
+                        "maximum": 60,
+                        "description": "Interval in which the current AirPlay 2 status is queried."
                     },
                     "unreachableThreshold": {
                         "title": "Unreachable Threshold (seconds)",
@@ -32,12 +37,14 @@
                         "default": 30,
                         "required": false,
                         "minimum": 10,
-                        "maximum": 600
+                        "maximum": 600,
+                        "description": "Time an AirPort Express device must be unreachable to be reported as unreachable."
                     }
                 }
             },
             "discovery": {
                 "title": "Discover settings",
+                "description": "All settings that affect the discovery of AirPort Express devices:",
                 "type": "object",
                 "properties": {
                     "enabled": {
@@ -45,14 +52,16 @@
                         "type": "boolean",
                         "placeholder": true,
                         "default": true,
-                        "required": false
+                        "required": false,
+                        "description": "Should new device be discovered? When disabled, only already cached devices will be exposed."
                     },
                     "always": {
                         "title": "Always",
                         "type": "boolean",
                         "placeholder": true,
                         "default": true,
-                        "required": false
+                        "required": false,
+                        "description": "When enabled, new device will be discovered always. When disabled, new device will only be discovered at startup."
                     },
                     "intervals": {
                         "title": "Intervals (seconds)",
@@ -61,7 +70,8 @@
                         "default": 30,
                         "required": false,
                         "minimum": 10,
-                        "maximum": 600
+                        "maximum": 600,
+                        "description": "Intervals in which to search for new devices."
                     },
                     "whitelist": {
                         "title": "Whitelist",
@@ -72,7 +82,8 @@
                                 "type": "boolean",
                                 "placeholder": false,
                                 "default": false,
-                                "required": false
+                                "required": false,
+                                "description": "Only discover devices on the whitelist. This won't affect cached devices. (Can't be enabled when the blacklist is already enabled)"
                             },
                             "list": {
                                 "title": "Serial Numbers",
@@ -96,7 +107,8 @@
                                 "type": "boolean",
                                 "placeholder": false,
                                 "default": false,
-                                "required": false
+                                "required": false,
+                                "description": "Only discover devices on the blacklist. This won't affect cached devices. (Can't be enabled when the whitelist is already enabled)"
                             },
                             "list": {
                                 "title": "Serial Numbers",
