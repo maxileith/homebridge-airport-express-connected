@@ -17,7 +17,24 @@ To configure manually, add to the `platforms` section of Homebridge's `config.js
 **Config:**
 ```json
 {
-  "platform": "AirportExpressConnected",
-  "name": "Airport Express Connected Platform"
+    "name": "Airport Express Connected Platform",
+    "platform": "AirportExpressConnected",
+    "update": {
+        "refreshRate": 3,
+        "unreachableThreshold": 30
+    },
+    "discovery": {
+        "enabled": true,
+        "always": true,
+        "intervals": 30,
+        "whitelist": {
+            "enabled": false,
+            "list": []
+        },
+        "blacklist": {
+            "enabled": false,
+            "list": []
+        }
+    }
 }
 ```

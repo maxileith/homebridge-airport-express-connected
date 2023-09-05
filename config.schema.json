@@ -2,8 +2,7 @@
     "pluginAlias": "AirportExpressConnected",
     "pluginType": "platform",
     "singular": true,
-    "headerDisplay" : "# AirPort Express Connected \n\n Plugin that creates an occupancy sensor that shows wether or not there is an active AirPlay 2 connection to AirPort Express (2nd Gen.) devices. \n\n This plugin is supposed to be a painless experience. There is **no configuration required**. Just install and start the plugin. Devices will be automatically discovered and sensors created. Tweaking the configuration is completely optional. \n\n Provided with ❤ by [maxileith](https://github.com/maxileith).",
-    "footerDisplay": "Provided with ❤ by [maxileith](https://github.com/maxileith).",
+    "headerDisplay" : "# AirPort Express Connected \n\n Plugin that creates an occupancy sensor that shows wether or not there is an active AirPlay 2 connection to AirPort Express (2nd Gen.) devices. \n\n This plugin is supposed to be a painless experience. There is **no configuration required**. Just install and start the plugin. Devices will be automatically discovered and sensors created. Tweaking the configuration is completely optional. \n\n Made with ❤ by [maxileith](https://github.com/maxileith).",
     "schema": {
         "type": "object",
         "properties": {
@@ -16,7 +15,7 @@
                 "description": "The name of the plugin, e.g. shown in the logs."
             },
             "update": {
-                "title": "Update settings",
+                "title": "Update",
                 "description": "All settings that affect the detection of state changes of AirPort Express devices:",
                 "type": "object",
                 "properties": {
@@ -43,7 +42,7 @@
                 }
             },
             "discovery": {
-                "title": "Discover settings",
+                "title": "Discover",
                 "description": "All settings that affect the discovery of AirPort Express devices:",
                 "type": "object",
                 "properties": {
@@ -94,7 +93,8 @@
                                     "type": "string",
                                     "minLength": 12,
                                     "maxLength": 12
-                                }
+                                },
+                                "uniqueItems": true
                             }
                         }
                     },
@@ -119,7 +119,8 @@
                                     "type": "string",
                                     "minLength": 12,
                                     "maxLength": 12
-                                }
+                                },
+                                "uniqueItems": true
                             }
                         }
                     }

@@ -53,7 +53,7 @@ export default class AirportExpressConnectedPlatform
             // discover devices periodically
             if (this.config.discovery.enabled) {
                 // discover devices periodically
-                this.log.info("Searching for AirPort Express devices");
+                this.log.info("Searching for AirPort Express devices ...");
                 this.discoverDevices();
                 if (this.config.discovery.always) {
                     setInterval(
