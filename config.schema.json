@@ -2,15 +2,116 @@
     "pluginAlias": "AirportExpressConnected",
     "pluginType": "platform",
     "singular": true,
-    "headerDisplay": "Homebridge plugin that uses mDNS request data to show a occupancy sensor that is activated when connecting to an AirPort Express (2nd Gen.) devices via AirPlay 2.",
     "schema": {
         "type": "object",
         "properties": {
             "name": {
-                "title": "Name",
+                "title": "Platform Name",
                 "type": "string",
-                "default": "Airport Express Connected Platform",
+                "default": "Airport Express Connected",
+                "placeholder": "Airport Express Connected",
                 "required": true
+            },
+            "update": {
+                "title": "Update settings",
+                "type": "object",
+                "properties": {
+                    "refreshRate": {
+                        "title": "Refresh Rate (seconds)",
+                        "type": "integer",
+                        "placeholder": 3,
+                        "default": 3,
+                        "required": false,
+                        "minimum": 1,
+                        "maximum": 60
+                    },
+                    "unreachableThreshold": {
+                        "title": "Unreachable Threshold (seconds)",
+                        "type": "integer",
+                        "placeholder": 30,
+                        "default": 30,
+                        "required": false,
+                        "minimum": 10,
+                        "maximum": 600
+                    }
+                }
+            },
+            "discovery": {
+                "title": "Discover settings",
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "title": "Enabled",
+                        "type": "boolean",
+                        "placeholder": true,
+                        "default": true,
+                        "required": false
+                    },
+                    "always": {
+                        "title": "Always",
+                        "type": "boolean",
+                        "placeholder": true,
+                        "default": true,
+                        "required": false
+                    },
+                    "intervals": {
+                        "title": "Intervals (seconds)",
+                        "type": "integer",
+                        "placeholder": 30,
+                        "default": 30,
+                        "required": false,
+                        "minimum": 10,
+                        "maximum": 600
+                    },
+                    "whitelist": {
+                        "title": "Whitelist",
+                        "type": "object",
+                        "properties": {
+                            "enabled": {
+                                "title": "Enabled",
+                                "type": "boolean",
+                                "placeholder": false,
+                                "default": false,
+                                "required": false
+                            },
+                            "list": {
+                                "title": "Serial Numbers",
+                                "type": "array",
+                                "default": [],
+                                "items": {
+                                    "title": "Serial Number",
+                                    "type": "string",
+                                    "minLength": 12,
+                                    "maxLength": 12
+                                }
+                            }
+                        }
+                    },
+                    "blacklist": {
+                        "title": "Blacklist",
+                        "type": "object",
+                        "properties": {
+                            "enabled": {
+                                "title": "Enabled",
+                                "type": "boolean",
+                                "placeholder": false,
+                                "default": false,
+                                "required": false
+                            },
+                            "list": {
+                                "title": "Serial Numbers",
+                                "type": "array",
+                                "default": [],
+                                "items": {
+                                    "title": "Serial Number",
+                                    "type": "string",
+                                    "minLength": 12,
+                                    "maxLength": 12
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     },

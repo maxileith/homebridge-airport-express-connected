@@ -9,7 +9,8 @@ import {
 } from "homebridge";
 import mdns from "mdns-js";
 import { mDNSReply, PLATFORM_NAME, PLUGIN_NAME } from "./settings";
-import AirportExpressAccessory from "./platformAccessory";
+import AirportExpressAccessory from "./airportExpressAccessory";
+import { IConfigOrig, IConfig } from "./IConfig";
 
 /**
  * HomebridgePlatform
@@ -17,7 +18,8 @@ import AirportExpressAccessory from "./platformAccessory";
  * parse the user config and discover/register accessories with Homebridge.
  */
 export default class AirportExpressConnectedPlatform
-    implements DynamicPlatformPlugin {
+    implements DynamicPlatformPlugin
+{
     public readonly Service: typeof Service = this.api.hap.Service;
     public readonly Characteristic: typeof Characteristic =
         this.api.hap.Characteristic;
@@ -27,7 +29,7 @@ export default class AirportExpressConnectedPlatform
 
     constructor(
         public readonly log: Logger,
-        public readonly config: PlatformConfig,
+        public config: PlatformConfig,
         public readonly api: API
     ) {
         this.log.debug("Finished initializing platform: ", this.config.name);
@@ -37,27 +39,61 @@ export default class AirportExpressConnectedPlatform
         // in order to ensure they weren't added to homebridge already. This event can also be used
         // to start discovery of new accessories.
         this.api.on("didFinishLaunching", () => {
-            log.debug("Executed didFinishLaunching callback");
+            this.log.debug("Executed didFinishLaunching callback");
+
+            this.log.debug("Processing configuration:");
+            this.log.debug(this.config as unknown as string);
+            this.config = this.processConfiguration(
+                this.config as unknown as IConfig
+            ) as PlatformConfig;
+            this.log.debug(this.config as unknown as string);
+
             this.loadCachedDevices();
 
             // discover devices periodically
-            this.log.info('Searching for AirPort Express devices');
-            this.discoverDevices();
-            setInterval(this.discoverDevices.bind(this), 30000);
+            if (this.config.discovery.enabled) {
+                // discover devices periodically
+                this.log.info("Searching for AirPort Express devices");
+                this.discoverDevices();
+                if (this.config.discovery.always) {
+                    setInterval(
+                        this.discoverDevices.bind(this),
+                        this.config.discovery.intervals * 1000
+                    );
+                }
+            } else {
+                this.log.info(
+                    "Not searching for AirPort Express devices, due to the discovery being disabled."
+                );
+            }
         });
     }
 
     loadCachedDevices(): void {
         for (var accessory of this.accessories) {
+            if (
+                !this.evalBlackWhiteList(accessory.context.device.serialNumber)
+            ) {
+                const l: string = this.config.discovery.whitelist.enabled
+                    ? "not whitelisted"
+                    : "blacklisted";
+                this.log.warn(
+                    `Cache: The cached AirPort Express device "${accessory.context.device.displayName}" (serial number: ${accessory.context.device.serialNumber}) would not be discovered with the current configuration as it is ${l}. You can remove the cached device in the Homebridge UI.`
+                );
+            }
+
             this.log.info(
                 "Cache: Restoring existing accessory from cache: ",
-                accessory.displayName
+                accessory.context.device.displayName
             );
 
             // create the accessory handler for the restored accessory
             // this is imported from `platformAccessory.ts`
             new AirportExpressAccessory(this, accessory);
-            this.log.debug("Finished restoring accessory from cache: ", accessory.displayName);
+            this.log.debug(
+                "Finished restoring accessory from cache: ",
+                accessory.context.device.displayName
+            );
         }
     }
 
@@ -70,7 +106,9 @@ export default class AirportExpressConnectedPlatform
 
         // add the restored accessory to the accessories cache so we can track if it has already been registered
         this.accessories.push(accessory);
-        this.log.debug(`Cache: Finished loading accessory ${accessory.displayName}`);
+        this.log.debug(
+            `Cache: Finished loading accessory ${accessory.displayName}`
+        );
     }
 
     /**
@@ -106,21 +144,41 @@ export default class AirportExpressConnectedPlatform
 
             // generate distinct ID
             const uuid: string = this.api.hap.uuid.generate(serialNumber);
-            this.log.debug(`Discovery: AirPort Express with serial number ${serialNumber} found. Generated uuid ${uuid}.`);
+            this.log.debug(
+                `Discovery: AirPort Express with serial number ${serialNumber} found. Generated uuid ${uuid}.`
+            );
 
             // see if an accessory with the same uuid has already been registered and restored from
             // the cached devices we stored in the `configureAccessory` method above
             const existingAccessory = this.accessories.find(
                 (accessory) => accessory.UUID === uuid
             );
-
             if (existingAccessory) {
-                this.log.debug(`Discovery: AirPort Express with uuid ${uuid} already exists.`);
+                this.log.debug(
+                    `Discovery: AirPort Express with uuid ${uuid} already exists.`
+                );
                 return;
             }
-            if (!data.fullname || !data.fullname.includes("._airplay._tcp.local")) {
+
+            if (!this.evalBlackWhiteList(serialNumber)) {
+                const l: string = this.config.discovery.whitelist.enabled
+                    ? "not on the whitelist"
+                    : "on the blacklist";
+                this.log.info(
+                    `Discovery: Won't add AirPort Express with serial number ${serialNumber} since it is ${l}.`
+                );
+                return;
+            }
+
+            // check if fullname is legit
+            if (
+                !data.fullname ||
+                !data.fullname.includes("._airplay._tcp.local")
+            ) {
                 this.log.debug(
-                    `Dicovery: Fullname "${data.fullname as string}" is invalid. Not adding as an accessory.`
+                    `Dicovery: Fullname "${
+                        data.fullname as string
+                    }" is invalid. Not adding as an accessory.`
                 );
                 return;
             }
@@ -142,7 +200,7 @@ export default class AirportExpressConnectedPlatform
             accessory.context.device = {
                 serialNumber,
                 displayName,
-                data
+                data,
             };
 
             // create the accessory handler for the newly create accessory
@@ -156,7 +214,9 @@ export default class AirportExpressConnectedPlatform
 
             this.configureAccessory(accessory);
 
-            this.log.debug(`Discovery: Finished creating and configuring accessory ${displayName}`);
+            this.log.debug(
+                `Discovery: Finished creating and configuring accessory ${displayName}`
+            );
         });
 
         setTimeout(() => {
@@ -168,6 +228,62 @@ export default class AirportExpressConnectedPlatform
                     `Discovery: Error during stopping the browser: ${err}`
                 );
             }
-        }, 5000);
+        }, this.config.discovery.intervals * 1000);
+    }
+
+    evalBlackWhiteList(serialNumber: string): boolean {
+        if (
+            this.config.discovery.whitelist.enabled &&
+            this.config.discovery.blacklist.enabled
+        ) {
+            this.log.error(
+                "Whitelist and Blacklist cannot be enabled at the same time"
+            );
+            return true;
+        }
+        if (this.config.discovery.whitelist.enabled) {
+            return this.config.discovery.whitelist.list.includes(serialNumber);
+        }
+        if (this.config.discovery.blacklist.enabled) {
+            return !this.config.discovery.blacklist.list.includes(serialNumber);
+        }
+        return true;
+    }
+
+    processConfiguration(config: IConfigOrig): IConfig {
+        const c: IConfig = {
+            name: config.name,
+            platform: config.platform,
+            update: {
+                refreshRate: config.update?.refreshRate || 3,
+                unreachableThreshold: config.update?.unreachableThreshold || 30,
+            },
+            discovery: {
+                enabled: config.discovery?.enabled || true,
+                always: config.discovery?.always || true,
+                intervals: config.discovery?.intervals || 60,
+                whitelist: {
+                    enabled: config.discovery?.whitelist?.enabled || false,
+                    list: config.discovery?.whitelist?.list || [],
+                },
+                blacklist: {
+                    enabled: config.discovery?.blacklist?.enabled || false,
+                    list: config.discovery?.blacklist?.list || [],
+                },
+            },
+        };
+
+        if (
+            c.discovery.whitelist.enabled &&
+            c.discovery.blacklist.enabled
+        ) {
+            this.log.warn(
+                "Both whitelist and blacklist are enabled. Disabling both. Only enable one or the other in the configuration."
+            );
+            c.discovery.whitelist.enabled = false;
+            c.discovery.blacklist.enabled = false;
+        }
+
+        return c;
     }
 }

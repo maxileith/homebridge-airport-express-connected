@@ -1,7 +1,7 @@
 import { API } from "homebridge";
 
 import { PLATFORM_NAME } from "./settings";
-import AirportExpressConnectedPlatform from "./platform";
+import AirportExpressConnectedPlatform from "./airportExpressConnectedPlatform";
 
 import mdns from "mdns-js";
 

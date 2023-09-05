@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory } from "homebridge";
 import mdns from "mdns-js";
-import AirportExpressConnectedPlatform from "./platform";
+import AirportExpressConnectedPlatform from "./airportExpressConnectedPlatform";
 import { mDNSReply } from "./settings";
 
 /**
@@ -12,9 +12,9 @@ export default class AirportExpressAccessory {
     private service: Service;
     private accessoryInformation: Service;
 
-    private secondsUntilReportedAsOffline: number = 60;
     private lastOnline: number =
-        Date.now() / 1000 - (this.secondsUntilReportedAsOffline - 10);
+        Date.now() / 1000 -
+        (this.platform.config.update.unreachableThreshold - 10);
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -60,7 +60,10 @@ export default class AirportExpressAccessory {
             `${this.accessory.context.device.displayName} - Accessory: Starting update loop`
         );
         this.updateConnectedStatus();
-        setInterval(this.updateConnectedStatus.bind(this), 2500);
+        setInterval(
+            this.updateConnectedStatus.bind(this),
+            this.platform.config.update.refreshRate * 1000
+        );
     }
 
     updateConnectedStatus() {
@@ -70,11 +73,15 @@ export default class AirportExpressAccessory {
             `${this.accessory.context.device.displayName} - Update: AirPort Express with serial number ${this.accessory.context.device.serialNumber}`
         );
 
-        this.platform.log.debug(`${this.accessory.context.device.displayName} - Update: Creating browser`);
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Creating browser`
+        );
         const mdnsBrowser = mdns.createBrowser(mdns.tcp("airplay"));
 
         mdnsBrowser.on("ready", () => {
-            this.platform.log.debug(`${this.accessory.context.device.displayName} - Update: Starting discovery with browser`);
+            this.platform.log.debug(
+                `${this.accessory.context.device.displayName} - Update: Starting discovery with browser`
+            );
             mdnsBrowser.discover();
         });
 
@@ -111,7 +118,8 @@ export default class AirportExpressAccessory {
                         found = true;
                         mdnsBrowser.stop();
                     } else if (
-                        this.lastOnline + this.secondsUntilReportedAsOffline <
+                        this.lastOnline +
+                            this.platform.config.update.unreachableThreshold <
                         Date.now() / 1000
                     ) {
                         this.setReachableStatus(
@@ -135,7 +143,9 @@ export default class AirportExpressAccessory {
         setTimeout(() => {
             try {
                 if (!found) {
-                    const secondsOffline: number = Math.round(Date.now() / 1000 - this.lastOnline);
+                    const secondsOffline: number = Math.round(
+                        Date.now() / 1000 - this.lastOnline
+                    );
                     this.platform.log.debug(
                         `${this.accessory.context.device.displayName} - Update: Device did not respond to the mDNS disovery. The device is no respondig since ${secondsOffline} seconds.`
                     );
@@ -146,7 +156,7 @@ export default class AirportExpressAccessory {
                     `${this.accessory.context.device.displayName} - Update: Error during stopping the browser: ${err}`
                 );
             }
-        }, 2500);
+        }, this.platform.config.update.refreshRate * 1000);
     }
 
     setConnectStatus(status: 0 | 1) {
@@ -157,7 +167,11 @@ export default class AirportExpressAccessory {
             ).value === status
         ) {
             this.platform.log.debug(
-                `${this.accessory.context.device.displayName} - Update: Connection Status unchanged: ${status ? "connected" : "disconnected"}`
+                `${
+                    this.accessory.context.device.displayName
+                } - Update: Connection Status unchanged: ${
+                    status ? "connected" : "disconnected"
+                }`
             );
             return;
         }
@@ -218,7 +232,11 @@ export default class AirportExpressAccessory {
             ).value === status
         ) {
             this.platform.log.debug(
-                `${this.accessory.context.device.displayName} - Update: Reachable status unchanged: ${status ? "unreachable" : "reachable"}`
+                `${
+                    this.accessory.context.device.displayName
+                } - Update: Reachable status unchanged: ${
+                    status ? "unreachable" : "reachable"
+                }`
             );
             return;
         }
