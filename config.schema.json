@@ -29,15 +29,38 @@
                         "maximum": 60,
                         "description": "Interval in which the current AirPlay 2 status is queried."
                     },
-                    "unreachableThreshold": {
-                        "title": "Unreachable Threshold (seconds)",
-                        "type": "integer",
-                        "placeholder": 30,
-                        "default": 30,
-                        "required": false,
-                        "minimum": 10,
-                        "maximum": 600,
-                        "description": "Time an AirPort Express device must be unreachable to be reported as unreachable."
+                    "unreachable": {
+                        "title": "Unreachable",
+                        "description": "Settings regarding the behavior of the exposed accessories in case the AirPort Express is unreachable.",
+                        "type": "object",
+                        "properties": {
+                            "ignore": {
+                                "title": "Ignore",
+                                "type": "boolean",
+                                "placeholder": false,
+                                "default": false,
+                                "required": false,
+                                "description": "Do not report that the AirPort Express is unreachable."
+                            },
+                            "threshold": {
+                                "title": "Threshold (seconds)",
+                                "type": "integer",
+                                "placeholder": 30,
+                                "default": 30,
+                                "required": false,
+                                "minimum": 10,
+                                "maximum": 600,
+                                "description": "Time an AirPort Express device must be unreachable to be reported as unreachable."
+                            },
+                            "reportDisconnected": {
+                                "title": "Report as disconnected",
+                                "type": "boolean",
+                                "placeholder": false,
+                                "default": false,
+                                "required": false,
+                                "description": "If selected, the plugin will report the AirPort Express as disconnected, thus automations that are triggered on disconnect are being triggered before the device is reported as unreachable."
+                            }
+                        }
                     }
                 }
             },
@@ -108,7 +131,7 @@
                                 "placeholder": false,
                                 "default": false,
                                 "required": false,
-                                "description": "Only discover devices on the blacklist. This won't affect cached devices. (Can't be enabled when the whitelist is already enabled)"
+                                "description": "Only discover devices not on the blacklist. This won't affect cached devices. (Can't be enabled when the whitelist is already enabled)"
                             },
                             "list": {
                                 "title": "Serial Numbers",

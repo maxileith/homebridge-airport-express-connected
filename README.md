@@ -21,7 +21,11 @@ To configure manually, add to the `platforms` section of Homebridge's `config.js
     "platform": "AirportExpressConnected",
     "update": {
         "refreshRate": 3,
-        "unreachableThreshold": 30
+        "unreachable": {
+            "ignore": false,
+            "threshold": 30,
+            "reportDisconnected": false
+        }
     },
     "discovery": {
         "enabled": true,

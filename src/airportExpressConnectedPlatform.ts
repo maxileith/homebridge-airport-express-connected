@@ -256,7 +256,11 @@ export default class AirportExpressConnectedPlatform
             platform: config.platform,
             update: {
                 refreshRate: config.update?.refreshRate || 3,
-                unreachableThreshold: config.update?.unreachableThreshold || 30,
+                unreachable: {
+                    ignore: config.update?.unreachable?.ignore || false,
+                    threshold: config.update?.unreachable?.threshold || 30,
+                    reportDisconnect: config.update?.unreachable?.reportDisconnect || false,
+                },
             },
             discovery: {
                 enabled: config.discovery?.enabled || true,

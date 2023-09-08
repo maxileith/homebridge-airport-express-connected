@@ -3,7 +3,11 @@ export interface IConfig {
     platform: string;
     update: {
         refreshRate: number;
-        unreachableThreshold: number;
+        unreachable: {
+            ignore: boolean;
+            threshold: number;
+            reportDisconnect: boolean;
+        };
     };
     discovery: {
         enabled: boolean;
@@ -25,7 +29,11 @@ export interface IConfigOrig {
     platform: string;
     update?: {
         refreshRate?: number;
-        unreachableThreshold?: number;
+        unreachable?: {
+            ignore?: boolean;
+            threshold?: number;
+            reportDisconnect?: boolean;
+        };
     };
     discovery?: {
         enabled?: boolean;

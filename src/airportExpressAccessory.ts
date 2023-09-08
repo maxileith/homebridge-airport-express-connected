@@ -1,4 +1,9 @@
-import { Service, PlatformAccessory } from "homebridge";
+import {
+    Service,
+    PlatformAccessory,
+    CharacteristicValue,
+    Nullable,
+} from "homebridge";
 import mdns from "mdns-js";
 import AirportExpressConnectedPlatform from "./airportExpressConnectedPlatform";
 import { mDNSReply } from "./settings";
@@ -12,9 +17,8 @@ export default class AirportExpressAccessory {
     private service: Service;
     private accessoryInformation: Service;
 
-    private lastOnline: number =
-        Date.now() / 1000 -
-        (this.platform.config.update.unreachableThreshold - 10);
+    private lastOnline: number = 0;
+    private reachable: boolean = true;
 
     constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -49,6 +53,11 @@ export default class AirportExpressAccessory {
             this.platform.Characteristic.Name,
             this.accessory.context.device.displayName
         );
+
+        // create handlers for required characteristics
+        this.service
+            .getCharacteristic(this.platform.Characteristic.OccupancyDetected)
+            .onGet(this.handleGet.bind(this));
 
         // log that an device has been created
         this.platform.log.info(
@@ -107,9 +116,7 @@ export default class AirportExpressAccessory {
                         );
                         this.changeFirmware(data.txt);
                         this.setConnectStatus(this.isDeviceConnected(data.txt));
-                        this.setReachableStatus(
-                            this.platform.Characteristic.StatusFault.NO_FAULT
-                        );
+                        this.setReachableStatus(true);
                         this.lastOnline = Date.now() / 1000;
 
                         this.platform.log.debug(
@@ -117,15 +124,6 @@ export default class AirportExpressAccessory {
                         );
                         found = true;
                         mdnsBrowser.stop();
-                    } else if (
-                        this.lastOnline +
-                            this.platform.config.update.unreachableThreshold <
-                        Date.now() / 1000
-                    ) {
-                        this.setReachableStatus(
-                            this.platform.Characteristic.StatusFault
-                                .GENERAL_FAULT
-                        );
                     }
                 }
             } catch (error) {
@@ -147,8 +145,15 @@ export default class AirportExpressAccessory {
                         Date.now() / 1000 - this.lastOnline
                     );
                     this.platform.log.debug(
-                        `${this.accessory.context.device.displayName} - Update: Device did not respond to the mDNS disovery. The device is no respondig since ${secondsOffline} seconds.`
+                        `${this.accessory.context.device.displayName} - Update: Device did not respond to the mDNS disovery. The device is not responding since ${secondsOffline} seconds.`
                     );
+                    if (
+                        this.lastOnline +
+                            this.platform.config.update.unreachable.threshold <=
+                        Date.now() / 1000
+                    ) {
+                        this.setReachableStatus(false);
+                    }
                 }
                 mdnsBrowser.stop();
             } catch (err) {
@@ -224,39 +229,40 @@ export default class AirportExpressAccessory {
         }
     }
 
-    setReachableStatus(status: 0 | 1) {
+    setReachableStatus(reachable: boolean): void {
+        // check if unreachable should be ignored
+        if (this.platform.config.update.unreachable.ignore) {
+            return;
+        }
+
         // exit if there is no status change
-        if (
-            this.service.getCharacteristic(
-                this.platform.Characteristic.StatusFault
-            ).value === status
-        ) {
+        if (this.reachable === reachable) {
             this.platform.log.debug(
                 `${
                     this.accessory.context.device.displayName
                 } - Update: Reachable status unchanged: ${
-                    status ? "unreachable" : "reachable"
+                    reachable ? "unreachable" : "reachable"
                 }`
             );
             return;
         }
 
-        this.service.setCharacteristic(
-            this.platform.Characteristic.StatusFault,
-            status
-        );
-        if (status === this.platform.Characteristic.StatusFault.GENERAL_FAULT) {
-            this.platform.log.warn(
-                `${this.accessory.context.device.displayName} - Update: unreachable`
-            );
-            this.setConnectStatus(
-                this.platform.Characteristic.OccupancyDetected
-                    .OCCUPANCY_NOT_DETECTED
-            );
-        } else {
+        this.reachable = reachable;
+        if (reachable) {
             this.platform.log.info(
                 `${this.accessory.context.device.displayName} - Update: reachable`
             );
+        } else {
+            this.platform.log.warn(
+                `${this.accessory.context.device.displayName} - Update: unreachable`
+            );
+            // report a disconnect if this has been configured to be done
+            if (this.platform.config.update.unreachable.reportDisconnect) {
+                this.setConnectStatus(
+                    this.platform.Characteristic.OccupancyDetected
+                        .OCCUPANCY_NOT_DETECTED
+                );
+            }
         }
     }
 
@@ -311,5 +317,29 @@ export default class AirportExpressAccessory {
                 firmwareVersion
             );
         }
+    }
+
+    async handleGet(): Promise<Nullable<CharacteristicValue>> {
+        const connected: Nullable<CharacteristicValue> =
+            this.service.getCharacteristic(
+                this.platform.Characteristic.OccupancyDetected
+            ).value;
+        const answer: string = !this.reachable
+            ? "not responding"
+            : connected
+            ? "connected"
+            : "disconnected";
+
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Pull: Received GET request from HomeKit. Answer: ${answer}`
+        );
+
+        if (!this.reachable) {
+            throw new this.platform.api.hap.HapStatusError(
+                this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE
+            );
+        }
+
+        return connected;
     }
 }
