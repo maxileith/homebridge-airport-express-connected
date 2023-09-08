@@ -1,11 +1,11 @@
-import { API } from "homebridge";
+import { API } from 'homebridge';
 
-import { PLATFORM_NAME } from "./settings";
-import AirportExpressConnectedPlatform from "./airportExpressConnectedPlatform";
+import { PLATFORM_NAME } from './settings';
+import AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
 
-import mdns from "mdns-js";
+import mdns from 'mdns-js';
 
-mdns.excludeInterface("0.0.0.0");
+mdns.excludeInterface('0.0.0.0');
 
 /**
  * This method registers the platform with Homebridge

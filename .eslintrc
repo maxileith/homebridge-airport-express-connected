@@ -12,7 +12,7 @@
     "ignorePatterns": ["dist"],
     "rules": {
         "quotes": ["warn", "single"],
-        "indent": ["warn", 2, { "SwitchCase": 1 }],
+        "indent": ["warn", 4],
         "semi": ["off"],
         "comma-dangle": ["warn", "always-multiline"],
         "dot-notation": "off",
