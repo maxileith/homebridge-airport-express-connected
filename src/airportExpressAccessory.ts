@@ -224,7 +224,14 @@ not responding since ${secondsOffline} seconds.`,
             `${this.accessory.context.device.displayName} - Update: Bit 11 is "${bit11}"`,
         );
 
-        if (bit11 === false) {
+        const gcgl: boolean = mDNS_TXT_record
+            .find((r: string) => r.indexOf('gcgl') > -1)!
+            .replace('gcgl=', '') === '1';
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: gcgl is "${gcgl}"`,
+        );
+
+        if ((gcgl && bit11) || !bit11) {
             return this.platform.Characteristic.OccupancyDetected
                 .OCCUPANCY_NOT_DETECTED;
         } else {
