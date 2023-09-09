@@ -21,6 +21,7 @@ export interface IConfig {
             enabled: boolean;
             list: string[];
         };
+        discardKnownDevices: boolean;
     };
 }
 
@@ -47,5 +48,6 @@ export interface IConfigOrig {
             enabled?: boolean;
             list?: string[];
         };
+        discardKnownDevices?: boolean;
     };
 }

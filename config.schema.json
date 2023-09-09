@@ -2,7 +2,7 @@
     "pluginAlias": "AirportExpressConnected",
     "pluginType": "platform",
     "singular": true,
-    "headerDisplay" : "# AirPort Express Connected \n\n Plugin that creates an occupancy sensor that shows wether or not there is an active AirPlay 2 connection to AirPort Express (2nd Gen.) devices. \n\n This plugin is supposed to be a painless experience. There is **no configuration required**. Just install and start the plugin. Devices will be automatically discovered and sensors created. Tweaking the configuration is completely optional. \n\n Made with ❤ by [maxileith](https://github.com/maxileith).",
+    "headerDisplay": "# AirPort Express Connected \n\n Plugin that creates an occupancy sensor that shows wether or not there is an active AirPlay 2 connection to AirPort Express (2nd Gen.) devices. \n\n This plugin is supposed to be a painless experience. There is **no configuration required**. Just install and start the plugin. Devices will be automatically discovered and sensors created. Tweaking the configuration is completely optional. \n\n Made with ❤ by [maxileith](https://github.com/maxileith).",
     "schema": {
         "type": "object",
         "properties": {
@@ -146,6 +146,14 @@
                                 "uniqueItems": true
                             }
                         }
+                    },
+                    "discardKnownDevices": {
+                        "title": "Discard Known Devices",
+                        "type": "boolean",
+                        "placeholder": false,
+                        "default": false,
+                        "required": false,
+                        "description": "Delete known devices from cache if they do not match the white- or blacklist any longer."
                     }
                 }
             }

@@ -76,11 +76,17 @@ implements DynamicPlatformPlugin {
                 const l: string = this.config.discovery.whitelist.enabled
                     ? 'not whitelisted'
                     : 'blacklisted';
-                this.log.warn(
-                    `Cache: The cached AirPort Express device "${accessory.context.device.displayName}" (serial number: \
+                if (this.config.discovery.discardKnownDevices) {
+                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                    this.log.warn(`Cache: Unregistered "${accessory.context.device.displayName}" (serial number: \
+${accessory.context.device.serialNumber}) since it is ${l}.`);
+                    return;
+                } else {
+                    this.log.warn(`Cache: The cached AirPort Express device "${accessory.context.device.displayName}" (serial number: \
 ${accessory.context.device.serialNumber}) would not be discovered with the current configuration as it is ${l}. You can remove the cached \
-device in the Homebridge UI.`,
-                );
+device in the Homebridge UI or activate to discard known devices that do not match the white- or blacklist rules in the configuration.`,
+                    );
+                }
             }
 
             this.log.info(
@@ -165,7 +171,7 @@ device in the Homebridge UI.`,
                 const l: string = this.config.discovery.whitelist.enabled
                     ? 'not on the whitelist'
                     : 'on the blacklist';
-                this.log.info(
+                this.log.debug(
                     `Discovery: Won't add AirPort Express with serial number ${serialNumber} since it is ${l}.`,
                 );
                 return;
@@ -275,6 +281,7 @@ device in the Homebridge UI.`,
                     enabled: config.discovery?.blacklist?.enabled || false,
                     list: config.discovery?.blacklist?.list || [],
                 },
+                discardKnownDevices: config.discovery?.discardKnownDevices || false,
             },
         };
 

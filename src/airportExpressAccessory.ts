@@ -252,7 +252,7 @@ not responding since ${secondsOffline} seconds.`,
                 `${
                     this.accessory.context.device.displayName
                 } - Update: Reachable status unchanged: ${
-                    reachable ? 'unreachable' : 'reachable'
+                    reachable ? 'reachable' : 'unreachable'
                 }`,
             );
             return;
