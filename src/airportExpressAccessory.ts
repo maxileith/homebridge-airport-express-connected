@@ -224,9 +224,20 @@ not responding since ${secondsOffline} seconds.`,
             `${this.accessory.context.device.displayName} - Update: Bit 11 is "${bit11}"`,
         );
 
-        return bit11 ?
-            this.platform.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED :
-            this.platform.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+        const gcgl: boolean = mDNS_TXT_record
+            .find((r: string) => r.indexOf('gcgl') > -1)!
+            .replace('gcgl=', '') === '1';
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: gcgl is "${gcgl}"`,
+        );
+
+        if ((gcgl && bit11) || !bit11) {
+            return this.platform.Characteristic.OccupancyDetected
+                .OCCUPANCY_NOT_DETECTED;
+        } else {
+            return this.platform.Characteristic.OccupancyDetected
+                .OCCUPANCY_DETECTED;
+        }
     }
 
     setReachableStatus(reachable: boolean): void {
