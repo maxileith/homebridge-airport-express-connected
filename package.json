@@ -8,8 +8,8 @@
     "scripts": {
         "lint": "eslint src/**.ts --max-warnings=0",
         "watch": "npm run build && npm link && nodemon",
-        "build": "rimraf ./dist && tsc",
-        "prepublishOnly": "npm run lint && npm run build"
+        "build": "rimraf -I ./dist && tsc",
+        "prepublishOnly": "npm run install && npm run lint && npm run build"
     },
     "engines": {
         "homebridge": "^1.6.1",
@@ -47,8 +47,18 @@
         "mdns-js": "^1.0.3"
     },
     "homepage": "https://github.com/maxileith/homebridge-airport-express-connected#readme",
-    "funding": {
-        "type": "paypal",
-        "url": "https://www.paypal.me/maxileith/EUR"
-    }
+    "funding": [
+        {
+            "type": "paypal",
+            "url": "https://www.paypal.me/maxileith/EUR"
+        },
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/maxileith"
+        },
+        {
+            "type": "buymeacoffee",
+            "url": "https://www.buymeacoffee.com/maxileith"
+        }
+    ]
 }
