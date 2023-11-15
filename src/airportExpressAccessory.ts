@@ -1,12 +1,12 @@
-import {
+import type {
     Service,
     PlatformAccessory,
     CharacteristicValue,
     Nullable,
 } from 'homebridge';
 import mdns from 'mdns-js';
-import AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
-import { mDNSReply } from './settings';
+import type AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
+import type { mDNSReply } from './settings';
 
 /**
  * Platform Accessory
@@ -20,7 +20,7 @@ export default class AirportExpressAccessory {
     private lastOnline = 0;
     private reachable = true;
 
-    constructor(
+    public constructor(
         private readonly platform: AirportExpressConnectedPlatform,
         private readonly accessory: PlatformAccessory,
     ) {
@@ -76,8 +76,8 @@ ${this.accessory.context.device.serialNumber} created!`,
         );
     }
 
-    updateConnectedStatus() {
-        let found = false;
+    private updateConnectedStatus(): void {
+        let found: boolean = false;
 
         this.platform.log.debug(
             `${this.accessory.context.device.displayName} - Update: AirPort Express with serial number \
@@ -87,7 +87,8 @@ ${this.accessory.context.device.serialNumber}`,
         this.platform.log.debug(
             `${this.accessory.context.device.displayName} - Update: Creating browser`,
         );
-        const mdnsBrowser = mdns.createBrowser(mdns.tcp('airplay'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mdnsBrowser: any = mdns.createBrowser(mdns.tcp('airplay'));
 
         mdnsBrowser.on('ready', () => {
             this.platform.log.debug(
@@ -99,7 +100,7 @@ ${this.accessory.context.device.serialNumber}`,
         mdnsBrowser.on('update', (data: mDNSReply) => {
             try {
                 if (data && data.txt) {
-                    const foundSerialNumber = data.txt
+                    const foundSerialNumber: string | undefined = data.txt
                         .find((str) => str.indexOf('serialNumber') > -1)
                         ?.replace('serialNumber=', '');
 
@@ -168,7 +169,7 @@ not responding since ${secondsOffline} seconds.`,
         }, this.platform.config.update.refreshRate * 1000);
     }
 
-    setConnectStatus(status: 0 | 1) {
+    private setConnectStatus(status: 0 | 1): void {
         // exit if there is no status change
         if (
             this.service.getCharacteristic(
@@ -203,7 +204,7 @@ not responding since ${secondsOffline} seconds.`,
         }
     }
 
-    isDeviceConnected(mDNS_TXT_record: Array<string>): 0 | 1 {
+    private isDeviceConnected(mDNS_TXT_record: string[]): 0 | 1 {
         const flagsHex: string = mDNS_TXT_record
             .find((r: string) => r.indexOf('flag') > -1)!
             .replace('flags=', '');
@@ -240,7 +241,7 @@ not responding since ${secondsOffline} seconds.`,
         }
     }
 
-    setReachableStatus(reachable: boolean): void {
+    private setReachableStatus(reachable: boolean): void {
         // check if unreachable should be ignored
         if (this.platform.config.update.unreachable.ignore) {
             return;
@@ -277,17 +278,17 @@ not responding since ${secondsOffline} seconds.`,
         }
     }
 
-    hexStringToBitString(hex: string): string {
+    private hexStringToBitString(hex: string): string {
         return this.reverseString(
             parseInt(hex, 16).toString(2).padStart(20, '0'),
         );
     }
 
-    reverseString(value: string): string {
+    private reverseString(value: string): string {
         return value.split('').reverse().join('');
     }
 
-    changeName(fullname: string): void {
+    private changeName(fullname: string): void {
         const displayName: string = fullname.replace(
             '._airplay._tcp.local',
             '',
@@ -309,14 +310,14 @@ was changed.`,
         }
     }
 
-    changeFirmware(mDNS_TXT_record: Array<string>): void {
+    private changeFirmware(mDNS_TXT_record: string[]): void {
         let firmwareVersion: string = mDNS_TXT_record
             .find((r: string) => r.indexOf('fv') > -1)!
             .replace('fv=', '');
 
         firmwareVersion =
             firmwareVersion === 'p20.78100.3' ? '7.8.1' : firmwareVersion;
-        const prevFirmwareVersion = this.accessoryInformation.getCharacteristic(
+        const prevFirmwareVersion: Nullable<CharacteristicValue> = this.accessoryInformation.getCharacteristic(
             this.platform.Characteristic.FirmwareRevision,
         ).value;
 
@@ -331,7 +332,7 @@ was changed.`,
         }
     }
 
-    async handleGet(): Promise<Nullable<CharacteristicValue>> {
+    private async handleGet(): Promise<Nullable<CharacteristicValue>> {
         const connected: Nullable<CharacteristicValue> =
             this.service.getCharacteristic(
                 this.platform.Characteristic.OccupancyDetected,
