@@ -1,4 +1,4 @@
-import {
+import type {
     API,
     DynamicPlatformPlugin,
     Logger,
@@ -6,31 +6,33 @@ import {
     PlatformConfig,
     Service,
     Characteristic,
+    UnknownContext,
 } from 'homebridge';
 import mdns from 'mdns-js';
-import { mDNSReply, PLATFORM_NAME, PLUGIN_NAME } from './settings';
+import type { mDNSReply} from './settings';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import AirportExpressAccessory from './airportExpressAccessory';
-import { IConfigOrig, IConfig } from './IConfig';
+import type { IConfigOrig, IConfig } from './IConfig';
 
 /**
  * HomebridgePlatform
  * This class is the main constructor for your plugin, this is where you should
  * parse the user config and discover/register accessories with Homebridge.
  */
-export default class AirportExpressConnectedPlatform
-implements DynamicPlatformPlugin {
-    public readonly Service: typeof Service = this.api.hap.Service;
-    public readonly Characteristic: typeof Characteristic =
-        this.api.hap.Characteristic;
+export default class AirportExpressConnectedPlatform implements DynamicPlatformPlugin {
+    public readonly Service: typeof Service;
+    public readonly Characteristic: typeof Characteristic;
 
     // this is used to track restored cached accessories
     public readonly accessories: PlatformAccessory[] = [];
 
-    constructor(
+    public constructor(
         public readonly log: Logger,
         public config: PlatformConfig,
         public readonly api: API,
     ) {
+        this.Characteristic = this.api.hap.Characteristic;
+        this.Service = this.api.hap.Service;
         this.log.debug('Finished initializing platform: ', this.config.name);
 
         // When this event is fired it means Homebridge has restored all cached accessories from disk.
@@ -68,7 +70,21 @@ implements DynamicPlatformPlugin {
         });
     }
 
-    loadCachedDevices(): void {
+    /**
+     * This function is invoked when homebridge restores cached accessories from disk at startup.
+     * It should be used to setup event handlers for characteristics and update respective values.
+     */
+    public configureAccessory(accessory: PlatformAccessory): void {
+        this.log.info(`Cache: Loading accessory ${accessory.displayName}`);
+
+        // add the restored accessory to the accessories cache so we can track if it has already been registered
+        this.accessories.push(accessory);
+        this.log.debug(
+            `Cache: Finished loading accessory ${accessory.displayName}`,
+        );
+    }
+
+    private loadCachedDevices(): void {
         for (const accessory of this.accessories) {
             if (
                 !this.evalBlackWhiteList(accessory.context.device.serialNumber)
@@ -105,27 +121,14 @@ device in the Homebridge UI or activate to discard known devices that do not mat
     }
 
     /**
-     * This function is invoked when homebridge restores cached accessories from disk at startup.
-     * It should be used to setup event handlers for characteristics and update respective values.
-     */
-    configureAccessory(accessory: PlatformAccessory): void {
-        this.log.info(`Cache: Loading accessory ${accessory.displayName}`);
-
-        // add the restored accessory to the accessories cache so we can track if it has already been registered
-        this.accessories.push(accessory);
-        this.log.debug(
-            `Cache: Finished loading accessory ${accessory.displayName}`,
-        );
-    }
-
-    /**
      * This is an example method showing how to register discovered accessories.
      * Accessories must only be registered once, previously created accessories
      * must not be registered again to prevent "duplicate UUID" errors.
      */
-    discoverDevices() {
+    private discoverDevices(): void {
         this.log.debug('Discovery: Creating browser');
-        const mdnsBrowser = mdns.createBrowser(mdns.tcp('airplay'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mdnsBrowser: any = mdns.createBrowser(mdns.tcp('airplay'));
 
         // discover devices
         mdnsBrowser.on('ready', () => {
@@ -157,7 +160,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
 
             // see if an accessory with the same uuid has already been registered and restored from
             // the cached devices we stored in the `configureAccessory` method above
-            const existingAccessory = this.accessories.find(
+            const existingAccessory: PlatformAccessory<UnknownContext> | undefined = this.accessories.find(
                 (accessory) => accessory.UUID === uuid,
             );
             if (existingAccessory) {
@@ -191,7 +194,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             }
 
             // extract additional meta information
-            const displayName = data.fullname.replace(
+            const displayName: string = data.fullname.replace(
                 '._airplay._tcp.local',
                 '',
             );
@@ -200,7 +203,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             this.log.info('Discovery: Adding new accessory ', displayName);
 
             // create a new accessory
-            const accessory = new this.api.platformAccessory(displayName, uuid);
+            const accessory: PlatformAccessory = new this.api.platformAccessory(displayName, uuid);
 
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
@@ -238,7 +241,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
         }, this.config.discovery.intervals * 1000);
     }
 
-    evalBlackWhiteList(serialNumber: string): boolean {
+    private evalBlackWhiteList(serialNumber: string): boolean {
         if (
             this.config.discovery.whitelist.enabled &&
             this.config.discovery.blacklist.enabled
@@ -257,7 +260,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
         return true;
     }
 
-    processConfiguration(config: IConfigOrig): IConfig {
+    private processConfiguration(config: IConfigOrig): IConfig {
         const c: IConfig = {
             name: config.name,
             platform: config.platform,
