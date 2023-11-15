@@ -7,16 +7,30 @@
     "author": "Maximilian Leith",
     "scripts": {
         "lint": "eslint src/**.ts --max-warnings=0",
-        "watch": "npm run build && npm link && nodemon",
-        "build": "rimraf -I ./dist && tsc",
-        "prepublishOnly": "npm install && npm run lint && npm run build"
+        "watch": "npm run build && npm link && nodemon --watch src --watch /var/lib/homebridge/config.json --watch ~/.homebridge/config.json",
+        "build": "npm ci && rimraf -I ./dist && npm run lint && tsc",
+        "prepublishOnly": "npm run build",
+        "postversion": "git push && git push --tags"
     },
     "engines": {
         "homebridge": "^1.7.0",
         "node": "^20.9.0 || ^18.18.2"
     },
     "keywords": [
-        "homebridge-plugin"
+        "homebridge-plugin",
+        "airportexpress",
+        "airport express",
+        "apple",
+        "express",
+        "homebridge",
+        "plugin",
+        "playing",
+        "state",
+        "media",
+        "automations",
+        "homekit",
+        "airplay",
+        "smarthome"
     ],
     "license": "MIT",
     "files": [
