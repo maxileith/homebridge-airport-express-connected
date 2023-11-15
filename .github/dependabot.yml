@@ -1,0 +1,35 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: npm #
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: /
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: daily
+      time: "04:00"
+      # Use CET
+      timezone: Europe/Berlin
+    target-branch: develop
+    labels:
+      - dependency
+    reviewers:
+      - maxileith
+    assignees:
+      - maxileith
+    commit-message:
+      # Prefix all commit messages with "npm: "
+      prefix: npm
+    versioning-strategy: increase
+    groups:
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]

@@ -1,4 +1,4 @@
-import { API } from 'homebridge';
+import type { API } from 'homebridge';
 
 import { PLATFORM_NAME } from './settings';
 import AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
@@ -10,6 +10,6 @@ mdns.excludeInterface('0.0.0.0');
 /**
  * This method registers the platform with Homebridge
  */
-export = (api: API) => {
+export = (api: API): void => {
     api.registerPlatform(PLATFORM_NAME, AirportExpressConnectedPlatform);
 };
