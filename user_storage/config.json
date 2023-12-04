@@ -1,0 +1,55 @@
+{
+    "bridge": {
+        "name": "Homebridge E01F",
+        "username": "0E:D9:CF:BB:96:51",
+        "port": 51667,
+        "pin": "918-01-412",
+        "advertiser": "bonjour-hap"
+    },
+    "accessories": [],
+    "platforms": [
+        {
+            "name": "Config",
+            "port": 8581,
+            "auth": "form",
+            "theme": "auto",
+            "tempUnits": "c",
+            "lang": "auto",
+            "platform": "config"
+        },
+        {
+            "name": "Config",
+            "port": 8581,
+            "auth": "form",
+            "theme": "auto",
+            "tempUnits": "c",
+            "lang": "auto",
+            "platform": "config"
+        },
+        {
+            "name": "Airport Express Connected Platform",
+            "platform": "AirportExpressConnected",
+            "update": {
+                "refreshRate": 3,
+                "unreachable": {
+                    "ignore": false,
+                    "threshold": 30,
+                    "reportDisconnected": false
+                }
+            },
+            "discovery": {
+                "enabled": true,
+                "always": true,
+                "intervals": 30,
+                "whitelist": {
+                    "enabled": false,
+                    "list": []
+                },
+                "blacklist": {
+                    "enabled": false,
+                    "list": []
+                }
+            }
+        }
+    ]
+}

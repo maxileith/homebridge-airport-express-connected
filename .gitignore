@@ -1,6 +1,7 @@
-# Created by .ignore support plugin (hsz.mobi)
-### HAP-NodeJS files
-persist
+user_storage/*
+!user_storage/config.json
+
+.vscode
 
 ### Node template
 # Logs

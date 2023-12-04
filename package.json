@@ -1,20 +1,20 @@
 {
     "name": "homebridge-airport-express-connected",
     "displayName": "Airport Express Connected",
-    "version": "1.2.0",
+    "version": "1.2.1-1",
     "description": "Homebridge plugin that uses mDNS request data to show a occupancy sensor that is activated when connecting to an airport express devices via AirPlay 2.",
     "main": "dist/index.js",
     "author": "Maximilian Leith",
     "scripts": {
         "lint": "eslint src/**.ts --max-warnings=0",
-        "watch": "npm run build && npm link && nodemon --watch src --watch /var/lib/homebridge/config.json --watch ~/.homebridge/config.json",
+        "watch": "npm run build && npm link && nodemon",
         "build": "npm ci && rimraf -I ./dist && npm run lint && tsc",
         "prepublishOnly": "npm run build",
         "postversion": "git push && git push --tags"
     },
     "engines": {
         "homebridge": "^1.7.0",
-        "node": "^20.9.0 || ^18.18.2"
+        "node": "^20.9.0 || ^18.19.0"
     },
     "keywords": [
         "homebridge-plugin",
@@ -46,15 +46,15 @@
         "url": "http://github.com/maxileith/homebridge-airport-express-connected/issues"
     },
     "devDependencies": {
-        "@types/node": "^18.18.9",
-        "@typescript-eslint/eslint-plugin": "^6.11.0",
-        "@typescript-eslint/parser": "^6.11.0",
-        "eslint": "^8.53.0",
+        "@types/node": "^18.19.2",
+        "@typescript-eslint/eslint-plugin": "^6.13.1",
+        "@typescript-eslint/parser": "^6.13.1",
+        "eslint": "^8.55.0",
         "homebridge": "^1.7.0",
-        "nodemon": "^3.0.1",
+        "nodemon": "^3.0.2",
         "standard-version": "^9.5.0",
         "ts-node": "^10.9.1",
-        "typescript": "^5.2.2",
+        "typescript": "^5.3.2",
         "rimraf": "^5.0.5"
     },
     "dependencies": {
