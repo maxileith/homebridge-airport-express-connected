@@ -33,3 +33,20 @@ updates:
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    # Check the pip registry for updates every day (weekdays)
+    schedule:
+      interval: daily
+      time: "04:00"
+      # Use CET
+      timezone: Europe/Berlin
+    reviewers:
+      - maxileith
+    assignees:
+      - maxileith
+    commit-message:
+      # Prefix all commit messages with "ci: "
+      prefix: "ci"
