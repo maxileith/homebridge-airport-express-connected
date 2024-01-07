@@ -11,16 +11,19 @@
 This project is a fork of [homebridge-airport-express-playing](https://github.com/apexad/homebridge-airport-express-playing). The key differences is that this plugin reports if there is a device connected and not if music is playing or paused. This is helpful for automatically turning on or off the connected HiFi system via automations.
 
 ## Configuration
+
 This easiest way to use this plugin is to use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).  
 To configure manually, add to the `platforms` section of Homebridge's `config.json` after installing the plugin.
 
 **Config:**
+
 ```json
 {
     "name": "Airport Express Connected Platform",
     "platform": "AirportExpressConnected",
     "update": {
         "refreshRate": 3,
+        "ignoreGroupWithLeadingDevice": true,
         "unreachable": {
             "ignore": false,
             "threshold": 30,

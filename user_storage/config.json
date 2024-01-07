@@ -18,19 +18,11 @@
             "platform": "config"
         },
         {
-            "name": "Config",
-            "port": 8581,
-            "auth": "form",
-            "theme": "auto",
-            "tempUnits": "c",
-            "lang": "auto",
-            "platform": "config"
-        },
-        {
             "name": "Airport Express Connected Platform",
             "platform": "AirportExpressConnected",
             "update": {
                 "refreshRate": 3,
+                "ignoreGroupWithLeadingDevice": true,
                 "unreachable": {
                     "ignore": false,
                     "threshold": 30,

@@ -232,12 +232,22 @@ not responding since ${secondsOffline} seconds.`,
             `${this.accessory.context.device.displayName} - Update: gcgl is "${gcgl}"`,
         );
 
-        if ((gcgl && bit11) || !bit11) {
-            return this.platform.Characteristic.OccupancyDetected
-                .OCCUPANCY_NOT_DETECTED;
+        if (this.platform.config.update.ignoreGroupWithLeadingDevice) {
+            if ((gcgl && bit11) || !bit11) {
+                return this.platform.Characteristic.OccupancyDetected
+                    .OCCUPANCY_NOT_DETECTED;
+            } else {
+                return this.platform.Characteristic.OccupancyDetected
+                    .OCCUPANCY_DETECTED;
+            }
         } else {
-            return this.platform.Characteristic.OccupancyDetected
-                .OCCUPANCY_DETECTED;
+            if (bit11) {
+                return this.platform.Characteristic.OccupancyDetected
+                    .OCCUPANCY_DETECTED;
+            } else {
+                return this.platform.Characteristic.OccupancyDetected
+                    .OCCUPANCY_NOT_DETECTED;
+            }
         }
     }
 

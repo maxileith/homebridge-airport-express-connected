@@ -266,6 +266,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             platform: config.platform,
             update: {
                 refreshRate: config.update?.refreshRate || 3,
+                ignoreGroupWithLeadingDevice: config.update?.ignoreGroupWithLeadingDevice === false ? false : true,
                 unreachable: {
                     ignore: config.update?.unreachable?.ignore || false,
                     threshold: config.update?.unreachable?.threshold || 30,

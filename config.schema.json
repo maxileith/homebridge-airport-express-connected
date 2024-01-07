@@ -24,10 +24,17 @@
                         "type": "integer",
                         "placeholder": 3,
                         "default": 3,
-                        "required": false,
+                        "required": true,
                         "minimum": 1,
                         "maximum": 60,
                         "description": "Interval in which the current AirPlay 2 status is queried."
+                    },
+                    "ignoreGroupWithLeadingDevice": {
+                        "title": "Ignore Group with leading device.",
+                        "type": "boolean",
+                        "default": true,
+                        "required": true,
+                        "description": "When disconnecting from an AirPlay group, the group will predestine a leading device, thus the AirPort Express is still connected to a device and will be report as connected. This ensures that the AirPort Express is reported as disconnected if it is part of a group with a leading device. This option is recommended to be checked for most users. However, in edge cases like playing music from a HomePod to the AirPort, this option will prohibit the AirPort Express from being reported as connected."
                     },
                     "unreachable": {
                         "title": "Unreachable",
@@ -39,7 +46,7 @@
                                 "type": "boolean",
                                 "placeholder": false,
                                 "default": false,
-                                "required": false,
+                                "required": true,
                                 "description": "Do not report that the AirPort Express is unreachable."
                             },
                             "threshold": {
@@ -47,7 +54,7 @@
                                 "type": "integer",
                                 "placeholder": 30,
                                 "default": 30,
-                                "required": false,
+                                "required": true,
                                 "minimum": 10,
                                 "maximum": 600,
                                 "description": "Time an AirPort Express device must be unreachable to be reported as unreachable."
@@ -57,7 +64,7 @@
                                 "type": "boolean",
                                 "placeholder": false,
                                 "default": false,
-                                "required": false,
+                                "required": true,
                                 "description": "If selected, the plugin will report the AirPort Express as disconnected, thus automations that are triggered on disconnect are being triggered before the device is reported as unreachable."
                             }
                         }
@@ -74,7 +81,7 @@
                         "type": "boolean",
                         "placeholder": true,
                         "default": true,
-                        "required": false,
+                        "required": true,
                         "description": "Should new device be discovered? When disabled, only already cached devices will be exposed."
                     },
                     "always": {
@@ -82,7 +89,7 @@
                         "type": "boolean",
                         "placeholder": true,
                         "default": true,
-                        "required": false,
+                        "required": true,
                         "description": "When enabled, new device will be discovered always. When disabled, new device will only be discovered at startup."
                     },
                     "intervals": {
@@ -90,7 +97,7 @@
                         "type": "integer",
                         "placeholder": 30,
                         "default": 30,
-                        "required": false,
+                        "required": true,
                         "minimum": 10,
                         "maximum": 600,
                         "description": "Intervals in which to search for new devices."
@@ -104,7 +111,7 @@
                                 "type": "boolean",
                                 "placeholder": false,
                                 "default": false,
-                                "required": false,
+                                "required": true,
                                 "description": "Only discover devices on the whitelist. This won't affect cached devices. (Can't be enabled when the blacklist is already enabled)"
                             },
                             "list": {
@@ -130,7 +137,7 @@
                                 "type": "boolean",
                                 "placeholder": false,
                                 "default": false,
-                                "required": false,
+                                "required": true,
                                 "description": "Only discover devices not on the blacklist. This won't affect cached devices. (Can't be enabled when the whitelist is already enabled)"
                             },
                             "list": {
@@ -152,7 +159,7 @@
                         "type": "boolean",
                         "placeholder": false,
                         "default": false,
-                        "required": false,
+                        "required": true,
                         "description": "Delete known devices from cache if they do not match the white- or blacklist any longer."
                     }
                 }
