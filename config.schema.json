@@ -34,7 +34,7 @@
                         "type": "boolean",
                         "default": true,
                         "required": true,
-                        "description": "When disconnecting from an AirPlay group, the group will predestine a leading device, thus the AirPort Express is still connected to a device and will be report as connected. This ensures that the AirPort Express is reported as disconnected if it is part of a group with a leading device. This option is recommended to be checked for most users. However, in edge cases like playing music from a HomePod to the AirPort, this option will prohibit the AirPort Express from being reported as connected."
+                        "description": "When disconnecting from an AirPlay group, the group will predestine a leading device, thus the AirPort Express is still connected to a device and will be report as connected. This configuration option ensures that the AirPort Express is reported as disconnected if it is part of a group with a leading device. It is recommended for most users to enable this option. However, in edge cases like playing music from a HomePod to the AirPort Express, this will prohibit the AirPort Express from being reported as connected."
                     },
                     "unreachable": {
                         "title": "Unreachable",
@@ -118,6 +118,7 @@
                                 "title": "Serial Numbers",
                                 "type": "array",
                                 "default": [],
+                                "required": true,
                                 "items": {
                                     "title": "Serial Number",
                                     "type": "string",
@@ -144,6 +145,7 @@
                                 "title": "Serial Numbers",
                                 "type": "array",
                                 "default": [],
+                                "required": true,
                                 "items": {
                                     "title": "Serial Number",
                                     "type": "string",
