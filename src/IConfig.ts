@@ -3,6 +3,7 @@ export interface IConfig {
     platform: string;
     update: {
         refreshRate: number;
+        ignoreGroupWithLeadingDevice: boolean;
         unreachable: {
             ignore: boolean;
             threshold: number;
@@ -30,6 +31,7 @@ export interface IConfigOrig {
     platform: string;
     update?: {
         refreshRate?: number;
+        ignoreGroupWithLeadingDevice?: boolean;
         unreachable?: {
             ignore?: boolean;
             threshold?: number;
