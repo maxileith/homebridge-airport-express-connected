@@ -55,7 +55,8 @@
         "standard-version": "^9.5.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.3.3",
-        "rimraf": "^5.0.5"
+        "rimraf": "^5.0.5",
+        "homebridge-config-ui-x": "^4.55.1"
     },
     "dependencies": {
         "mdns-js": "^1.0.3"
