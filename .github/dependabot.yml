@@ -18,8 +18,6 @@ updates:
     target-branch: develop
     labels:
       - dependency
-    reviewers:
-      - maxileith
     assignees:
       - maxileith
     commit-message:
@@ -43,8 +41,6 @@ updates:
       time: "04:00"
       # Use CET
       timezone: Europe/Berlin
-    reviewers:
-      - maxileith
     assignees:
       - maxileith
     commit-message:
