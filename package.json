@@ -54,7 +54,7 @@
         "nodemon": "^3.1.4",
         "standard-version": "^9.5.0",
         "ts-node": "^10.9.2",
-        "typescript": "^5.4.5",
+        "typescript": "^5.5.4",
         "rimraf": "^5.0.7",
         "homebridge-config-ui-x": "^4.56.2"
     },
