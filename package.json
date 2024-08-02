@@ -46,7 +46,7 @@
         "url": "http://github.com/maxileith/homebridge-airport-express-connected/issues"
     },
     "devDependencies": {
-        "@types/node": "^18.19.37",
+        "@types/node": "^18.19.43",
         "@typescript-eslint/eslint-plugin": "^7.13.1",
         "@typescript-eslint/parser": "^7.13.1",
         "eslint": "^8.57.0",
