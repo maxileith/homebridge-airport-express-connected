@@ -9,8 +9,12 @@
         "rootDir": "./src",
         "strict": true,
         "esModuleInterop": true,
-        "noImplicitAny": false
+        "noImplicitAny": false,
+        "resolveJsonModule": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
     },
-    "include": ["src/"],
+    "include": ["src/", "eslint.config.mjs"],
     "exclude": ["**/*.spec.ts"]
 }
