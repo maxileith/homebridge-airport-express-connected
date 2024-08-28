@@ -9,7 +9,7 @@ import type {
     UnknownContext,
 } from 'homebridge';
 import mdns from 'mdns-js';
-import type { mDNSReply} from './settings';
+import type { MDNSReply} from './settings';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import AirportExpressAccessory from './airportExpressAccessory';
 import type { IConfigOrig, IConfig } from './IConfig';
@@ -20,19 +20,19 @@ import type { IConfigOrig, IConfig } from './IConfig';
  * parse the user config and discover/register accessories with Homebridge.
  */
 export default class AirportExpressConnectedPlatform implements DynamicPlatformPlugin {
-    public readonly Service: typeof Service;
-    public readonly Characteristic: typeof Characteristic;
 
     // this is used to track restored cached accessories
     public readonly accessories: PlatformAccessory[] = [];
+    public readonly characteristic: typeof Characteristic;
+    public readonly service: typeof Service;
 
     public constructor(
         public readonly log: Logger,
         public config: PlatformConfig,
         public readonly api: API,
     ) {
-        this.Characteristic = this.api.hap.Characteristic;
-        this.Service = this.api.hap.Service;
+        this.characteristic = this.api.hap.Characteristic;
+        this.service = this.api.hap.Service;
         this.log.debug('Finished initializing platform: ', this.config.name);
 
         // When this event is fired it means Homebridge has restored all cached accessories from disk.
@@ -84,42 +84,6 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
         );
     }
 
-    private loadCachedDevices(): void {
-        for (const accessory of this.accessories) {
-            if (
-                !this.evalBlackWhiteList(accessory.context.device.serialNumber)
-            ) {
-                const l: string = this.config.discovery.whitelist.enabled
-                    ? 'not whitelisted'
-                    : 'blacklisted';
-                if (this.config.discovery.discardKnownDevices) {
-                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-                    this.log.warn(`Cache: Unregistered "${accessory.context.device.displayName}" (serial number: \
-${accessory.context.device.serialNumber}) since it is ${l}.`);
-                    return;
-                } else {
-                    this.log.warn(`Cache: The cached AirPort Express device "${accessory.context.device.displayName}" (serial number: \
-${accessory.context.device.serialNumber}) would not be discovered with the current configuration as it is ${l}. You can remove the cached \
-device in the Homebridge UI or activate to discard known devices that do not match the white- or blacklist rules in the configuration.`,
-                    );
-                }
-            }
-
-            this.log.info(
-                'Cache: Restoring existing accessory from cache: ',
-                accessory.context.device.displayName,
-            );
-
-            // create the accessory handler for the restored accessory
-            // this is imported from `platformAccessory.ts`
-            new AirportExpressAccessory(this, accessory);
-            this.log.debug(
-                'Finished restoring accessory from cache: ',
-                accessory.context.device.displayName,
-            );
-        }
-    }
-
     /**
      * This is an example method showing how to register discovered accessories.
      * Accessories must only be registered once, previously created accessories
@@ -136,12 +100,10 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             mdnsBrowser.discover();
         });
 
-        mdnsBrowser.on('update', (data: mDNSReply) => {
+        mdnsBrowser.on('update', (data: MDNSReply) => {
             // make sure we are looking at an AirPort Express 2nd Gen.
             if (
-                !data ||
-                !data.txt ||
-                !data.txt.includes('model=AirPort10,115')
+                !data?.txt?.includes('model=AirPort10,115')
             ) {
                 return;
             }
@@ -149,7 +111,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             // extract serial number
             const serialNumber: string =
                 data.txt
-                    .find((str) => str.indexOf('serialNumber') > -1)
+                    .find((str) => str.includes('serialNumber'))
                     ?.replace('serialNumber=', '') || '';
 
             // generate distinct ID
@@ -182,8 +144,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
 
             // check if fullname is legit
             if (
-                !data.fullname ||
-                !data.fullname.includes('._airplay._tcp.local')
+                !data.fullname?.includes('._airplay._tcp.local')
             ) {
                 this.log.debug(
                     `Dicovery: Fullname "${
@@ -252,12 +213,48 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             return true;
         }
         if (this.config.discovery.whitelist.enabled) {
-            return this.config.discovery.whitelist.list.includes(serialNumber);
+            return this.config.discovery.whitelist.list.includes(serialNumber) ? true : false;
         }
         if (this.config.discovery.blacklist.enabled) {
             return !this.config.discovery.blacklist.list.includes(serialNumber);
         }
         return true;
+    }
+
+    private loadCachedDevices(): void {
+        for (const accessory of this.accessories) {
+            if (
+                !this.evalBlackWhiteList(accessory.context.device.serialNumber)
+            ) {
+                const l: string = this.config.discovery.whitelist.enabled
+                    ? 'not whitelisted'
+                    : 'blacklisted';
+                if (this.config.discovery.discardKnownDevices) {
+                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                    this.log.warn(`Cache: Unregistered "${accessory.context.device.displayName}" (serial number: \
+${accessory.context.device.serialNumber}) since it is ${l}.`);
+                    return;
+                } else {
+                    this.log.warn(`Cache: The cached AirPort Express device "${accessory.context.device.displayName}" (serial number: \
+${accessory.context.device.serialNumber}) would not be discovered with the current configuration as it is ${l}. You can remove the cached \
+device in the Homebridge UI or activate to discard known devices that do not match the white- or blacklist rules in the configuration.`,
+                    );
+                }
+            }
+
+            this.log.info(
+                'Cache: Restoring existing accessory from cache: ',
+                accessory.context.device.displayName,
+            );
+
+            // create the accessory handler for the restored accessory
+            // this is imported from `platformAccessory.ts`
+            new AirportExpressAccessory(this, accessory);
+            this.log.debug(
+                'Finished restoring accessory from cache: ',
+                accessory.context.device.displayName,
+            );
+        }
     }
 
     private processConfiguration(config: IConfigOrig): IConfig {

@@ -6,7 +6,7 @@ import type {
 } from 'homebridge';
 import mdns from 'mdns-js';
 import type AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
-import type { mDNSReply } from './settings';
+import type { MDNSReply } from './settings';
 
 /**
  * Platform Accessory
@@ -14,11 +14,11 @@ import type { mDNSReply } from './settings';
  * Each accessory may expose multiple services of different service types.
  */
 export default class AirportExpressAccessory {
-    private service: Service;
-    private accessoryInformation: Service;
 
+    private accessoryInformation: Service;
     private lastOnline = 0;
     private reachable = true;
+    private service: Service;
 
     public constructor(
         private readonly platform: AirportExpressConnectedPlatform,
@@ -30,33 +30,33 @@ export default class AirportExpressAccessory {
 
         // set accessory information
         this.accessoryInformation = this.accessory
-            .getService(this.platform.Service.AccessoryInformation)!
+            .getService(this.platform.service.AccessoryInformation)!
             .setCharacteristic(
-                this.platform.Characteristic.Manufacturer,
+                this.platform.characteristic.Manufacturer,
                 'Apple Inc.',
             )
-            .setCharacteristic(this.platform.Characteristic.Model, 'A1392')
+            .setCharacteristic(this.platform.characteristic.Model, 'A1392')
             .setCharacteristic(
-                this.platform.Characteristic.SerialNumber,
+                this.platform.characteristic.SerialNumber,
                 this.accessory.context.device.serialNumber,
             );
 
         // get the OccupancySensor service if it exists, otherwise create a new OccupancySensor service
         // you can create multiple services for each accessory
         this.service =
-            this.accessory.getService(this.platform.Service.OccupancySensor) ||
-            this.accessory.addService(this.platform.Service.OccupancySensor);
+            this.accessory.getService(this.platform.service.OccupancySensor) ||
+            this.accessory.addService(this.platform.service.OccupancySensor);
 
         // set the service name, this is what is displayed as the default name on the Home app
         // in this case we are using the name we stored in the `accessory.context` in the `discoverDevice
         this.service.setCharacteristic(
-            this.platform.Characteristic.Name,
+            this.platform.characteristic.Name,
             this.accessory.context.device.displayName,
         );
 
         // create handlers for required characteristics
         this.service
-            .getCharacteristic(this.platform.Characteristic.OccupancyDetected)
+            .getCharacteristic(this.platform.characteristic.OccupancyDetected)
             .onGet(this.handleGet.bind(this));
 
         // log that an device has been created
@@ -74,6 +74,203 @@ ${this.accessory.context.device.serialNumber} created!`,
             this.updateConnectedStatus.bind(this),
             this.platform.config.update.refreshRate * 1000,
         );
+    }
+
+    private changeFirmware(mdnsTxtRecord: string[]): void {
+        let firmwareVersion: string = mdnsTxtRecord
+            .find((r: string) => r.includes('fv'))!
+            .replace('fv=', '');
+
+        firmwareVersion =
+            firmwareVersion === 'p20.78100.3' ? '7.8.1' : firmwareVersion;
+        const prevFirmwareVersion: Nullable<CharacteristicValue> = this.accessoryInformation.getCharacteristic(
+            this.platform.characteristic.FirmwareRevision,
+        ).value;
+
+        if (firmwareVersion !== prevFirmwareVersion) {
+            this.platform.log.info(
+                `Set Firmware of ${this.accessory.context.device.displayName} to "${firmwareVersion}".`,
+            );
+            this.accessoryInformation.setCharacteristic(
+                this.platform.characteristic.FirmwareRevision,
+                firmwareVersion,
+            );
+        }
+    }
+
+    private changeName(fullname: string): void {
+        const displayName: string = fullname.replace(
+            '._airplay._tcp.local',
+            '',
+        );
+        if (this.accessory.context.device.displayName !== displayName) {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} - Update: Renaming to "${displayName}" since the AirPlay speaker fullname \
+was changed.`,
+            );
+            this.accessory.context.device.displayName = displayName;
+            this.service.setCharacteristic(
+                this.platform.characteristic.Name,
+                displayName,
+            );
+        } else {
+            this.platform.log.debug(
+                `${this.accessory.context.device.displayName} - Update: Name unchanged.`,
+            );
+        }
+    }
+
+    private async handleGet(): Promise<Nullable<CharacteristicValue>> {
+        const connected: Nullable<CharacteristicValue> =
+            this.service.getCharacteristic(
+                this.platform.characteristic.OccupancyDetected,
+            ).value;
+        const answer: string = !this.reachable
+            ? 'not responding'
+            : connected
+                ? 'connected'
+                : 'disconnected';
+
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Pull: Received GET request from HomeKit. Answer: ${answer}`,
+        );
+
+        if (!this.reachable) {
+            throw new this.platform.api.hap.HapStatusError(
+                this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
+            );
+        }
+
+        return connected;
+    }
+
+    private hexStringToBitString(hex: string): string {
+        return this.reverseString(
+            parseInt(hex, 16).toString(2).padStart(20, '0'),
+        );
+    }
+
+    private isDeviceConnected(mdnsTxtRecord: string[]): 0 | 1 {
+        const flagsHex: string = mdnsTxtRecord
+            .find((r: string) => r.includes('flag'))!
+            .replace('flags=', '');
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Flags hex ${flagsHex}`,
+        );
+
+        const flagsBits: string = this.hexStringToBitString(flagsHex);
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Flags Bits ${flagsBits}`,
+        );
+
+        /* bit11 corresponds to playing
+         * see https://openairplay.github.io/airplay-spec/status_flags.html
+         */
+        const bit11: boolean = flagsBits.charAt(11) === '1';
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: Bit 11 is "${bit11}"`,
+        );
+
+        const gcgl: boolean = mdnsTxtRecord
+            .find((r: string) => r.includes('gcgl'))!
+            .replace('gcgl=', '') === '1';
+        this.platform.log.debug(
+            `${this.accessory.context.device.displayName} - Update: gcgl is "${gcgl}"`,
+        );
+
+        if (this.platform.config.update.ignoreGroupWithLeadingDevice) {
+            if ((gcgl && bit11) || !bit11) {
+                return this.platform.characteristic.OccupancyDetected
+                    .OCCUPANCY_NOT_DETECTED;
+            } else {
+                return this.platform.characteristic.OccupancyDetected
+                    .OCCUPANCY_DETECTED;
+            }
+        } else {
+            if (bit11) {
+                return this.platform.characteristic.OccupancyDetected
+                    .OCCUPANCY_DETECTED;
+            } else {
+                return this.platform.characteristic.OccupancyDetected
+                    .OCCUPANCY_NOT_DETECTED;
+            }
+        }
+    }
+
+    private reverseString(value: string): string {
+        return value.split('').reverse().join('');
+    }
+
+    private setConnectStatus(status: 0 | 1): void {
+        // exit if there is no status change
+        if (
+            this.service.getCharacteristic(
+                this.platform.characteristic.OccupancyDetected,
+            ).value === status
+        ) {
+            this.platform.log.debug(
+                `${
+                    this.accessory.context.device.displayName
+                } - Update: Connection Status unchanged: ${
+                    status ? 'connected' : 'disconnected'
+                }`,
+            );
+            return;
+        }
+
+        this.service.setCharacteristic(
+            this.platform.characteristic.OccupancyDetected,
+            status,
+        );
+        if (
+            status ===
+            this.platform.characteristic.OccupancyDetected.OCCUPANCY_DETECTED
+        ) {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} - Update: Has now an active AirPlay connection.`,
+            );
+        } else {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} - Update: Has no active AirPlay connection.`,
+            );
+        }
+    }
+
+    private setReachableStatus(reachable: boolean): void {
+        // check if unreachable should be ignored
+        if (this.platform.config.update.unreachable.ignore) {
+            return;
+        }
+
+        // exit if there is no status change
+        if (this.reachable === reachable) {
+            this.platform.log.debug(
+                `${
+                    this.accessory.context.device.displayName
+                } - Update: Reachable status unchanged: ${
+                    reachable ? 'reachable' : 'unreachable'
+                }`,
+            );
+            return;
+        }
+
+        this.reachable = reachable;
+        if (reachable) {
+            this.platform.log.info(
+                `${this.accessory.context.device.displayName} - Update: reachable`,
+            );
+        } else {
+            this.platform.log.warn(
+                `${this.accessory.context.device.displayName} - Update: unreachable`,
+            );
+            // report a disconnect if this has been configured to be done
+            if (this.platform.config.update.unreachable.reportDisconnect) {
+                this.setConnectStatus(
+                    this.platform.characteristic.OccupancyDetected
+                        .OCCUPANCY_NOT_DETECTED,
+                );
+            }
+        }
     }
 
     private updateConnectedStatus(): void {
@@ -97,11 +294,11 @@ ${this.accessory.context.device.serialNumber}`,
             mdnsBrowser.discover();
         });
 
-        mdnsBrowser.on('update', (data: mDNSReply) => {
+        mdnsBrowser.on('update', (data: MDNSReply) => {
             try {
-                if (data && data.txt) {
+                if (data?.txt) {
                     const foundSerialNumber: string | undefined = data.txt
-                        .find((str) => str.indexOf('serialNumber') > -1)
+                        .find((str) => str.includes('serialNumber'))
                         ?.replace('serialNumber=', '');
 
                     if (
@@ -167,202 +364,5 @@ not responding since ${secondsOffline} seconds.`,
                 );
             }
         }, this.platform.config.update.refreshRate * 1000);
-    }
-
-    private setConnectStatus(status: 0 | 1): void {
-        // exit if there is no status change
-        if (
-            this.service.getCharacteristic(
-                this.platform.Characteristic.OccupancyDetected,
-            ).value === status
-        ) {
-            this.platform.log.debug(
-                `${
-                    this.accessory.context.device.displayName
-                } - Update: Connection Status unchanged: ${
-                    status ? 'connected' : 'disconnected'
-                }`,
-            );
-            return;
-        }
-
-        this.service.setCharacteristic(
-            this.platform.Characteristic.OccupancyDetected,
-            status,
-        );
-        if (
-            status ===
-            this.platform.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
-        ) {
-            this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: Has now an active AirPlay connection.`,
-            );
-        } else {
-            this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: Has no active AirPlay connection.`,
-            );
-        }
-    }
-
-    private isDeviceConnected(mDNS_TXT_record: string[]): 0 | 1 {
-        const flagsHex: string = mDNS_TXT_record
-            .find((r: string) => r.indexOf('flag') > -1)!
-            .replace('flags=', '');
-        this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Flags hex ${flagsHex}`,
-        );
-
-        const flagsBits: string = this.hexStringToBitString(flagsHex);
-        this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Flags Bits ${flagsBits}`,
-        );
-
-        /* bit11 corresponds to playing
-         * see https://openairplay.github.io/airplay-spec/status_flags.html
-         */
-        const bit11: boolean = flagsBits.charAt(11) === '1';
-        this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Bit 11 is "${bit11}"`,
-        );
-
-        const gcgl: boolean = mDNS_TXT_record
-            .find((r: string) => r.indexOf('gcgl') > -1)!
-            .replace('gcgl=', '') === '1';
-        this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: gcgl is "${gcgl}"`,
-        );
-
-        if (this.platform.config.update.ignoreGroupWithLeadingDevice) {
-            if ((gcgl && bit11) || !bit11) {
-                return this.platform.Characteristic.OccupancyDetected
-                    .OCCUPANCY_NOT_DETECTED;
-            } else {
-                return this.platform.Characteristic.OccupancyDetected
-                    .OCCUPANCY_DETECTED;
-            }
-        } else {
-            if (bit11) {
-                return this.platform.Characteristic.OccupancyDetected
-                    .OCCUPANCY_DETECTED;
-            } else {
-                return this.platform.Characteristic.OccupancyDetected
-                    .OCCUPANCY_NOT_DETECTED;
-            }
-        }
-    }
-
-    private setReachableStatus(reachable: boolean): void {
-        // check if unreachable should be ignored
-        if (this.platform.config.update.unreachable.ignore) {
-            return;
-        }
-
-        // exit if there is no status change
-        if (this.reachable === reachable) {
-            this.platform.log.debug(
-                `${
-                    this.accessory.context.device.displayName
-                } - Update: Reachable status unchanged: ${
-                    reachable ? 'reachable' : 'unreachable'
-                }`,
-            );
-            return;
-        }
-
-        this.reachable = reachable;
-        if (reachable) {
-            this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: reachable`,
-            );
-        } else {
-            this.platform.log.warn(
-                `${this.accessory.context.device.displayName} - Update: unreachable`,
-            );
-            // report a disconnect if this has been configured to be done
-            if (this.platform.config.update.unreachable.reportDisconnect) {
-                this.setConnectStatus(
-                    this.platform.Characteristic.OccupancyDetected
-                        .OCCUPANCY_NOT_DETECTED,
-                );
-            }
-        }
-    }
-
-    private hexStringToBitString(hex: string): string {
-        return this.reverseString(
-            parseInt(hex, 16).toString(2).padStart(20, '0'),
-        );
-    }
-
-    private reverseString(value: string): string {
-        return value.split('').reverse().join('');
-    }
-
-    private changeName(fullname: string): void {
-        const displayName: string = fullname.replace(
-            '._airplay._tcp.local',
-            '',
-        );
-        if (this.accessory.context.device.displayName !== displayName) {
-            this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: Renaming to "${displayName}" since the AirPlay speaker fullname \
-was changed.`,
-            );
-            this.accessory.context.device.displayName = displayName;
-            this.service.setCharacteristic(
-                this.platform.Characteristic.Name,
-                displayName,
-            );
-        } else {
-            this.platform.log.debug(
-                `${this.accessory.context.device.displayName} - Update: Name unchanged.`,
-            );
-        }
-    }
-
-    private changeFirmware(mDNS_TXT_record: string[]): void {
-        let firmwareVersion: string = mDNS_TXT_record
-            .find((r: string) => r.indexOf('fv') > -1)!
-            .replace('fv=', '');
-
-        firmwareVersion =
-            firmwareVersion === 'p20.78100.3' ? '7.8.1' : firmwareVersion;
-        const prevFirmwareVersion: Nullable<CharacteristicValue> = this.accessoryInformation.getCharacteristic(
-            this.platform.Characteristic.FirmwareRevision,
-        ).value;
-
-        if (firmwareVersion !== prevFirmwareVersion) {
-            this.platform.log.info(
-                `Set Firmware of ${this.accessory.context.device.displayName} to "${firmwareVersion}".`,
-            );
-            this.accessoryInformation.setCharacteristic(
-                this.platform.Characteristic.FirmwareRevision,
-                firmwareVersion,
-            );
-        }
-    }
-
-    private async handleGet(): Promise<Nullable<CharacteristicValue>> {
-        const connected: Nullable<CharacteristicValue> =
-            this.service.getCharacteristic(
-                this.platform.Characteristic.OccupancyDetected,
-            ).value;
-        const answer: string = !this.reachable
-            ? 'not responding'
-            : connected
-                ? 'connected'
-                : 'disconnected';
-
-        this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Pull: Received GET request from HomeKit. Answer: ${answer}`,
-        );
-
-        if (!this.reachable) {
-            throw new this.platform.api.hap.HapStatusError(
-                this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
-            );
-        }
-
-        return connected;
     }
 }

@@ -1,55 +1,55 @@
 export interface IConfig {
-    name: string;
-    platform: string;
-    update: {
-        refreshRate: number;
-        ignoreGroupWithLeadingDevice: boolean;
-        unreachable: {
-            ignore: boolean;
-            threshold: number;
-            reportDisconnect: boolean;
-        };
-    };
     discovery: {
-        enabled: boolean;
         always: boolean;
-        intervals: number;
-        whitelist: {
-            enabled: boolean;
-            list: string[];
-        };
         blacklist: {
             enabled: boolean;
             list: string[];
         };
         discardKnownDevices: boolean;
+        enabled: boolean;
+        intervals: number;
+        whitelist: {
+            enabled: boolean;
+            list: string[];
+        };
+    };
+    name: string;
+    platform: string;
+    update: {
+        ignoreGroupWithLeadingDevice: boolean;
+        refreshRate: number;
+        unreachable: {
+            ignore: boolean;
+            reportDisconnect: boolean;
+            threshold: number;
+        };
     };
 }
 
 export interface IConfigOrig {
-    name: string;
-    platform: string;
-    update?: {
-        refreshRate?: number;
-        ignoreGroupWithLeadingDevice?: boolean;
-        unreachable?: {
-            ignore?: boolean;
-            threshold?: number;
-            reportDisconnect?: boolean;
-        };
-    };
     discovery?: {
-        enabled?: boolean;
         always?: boolean;
-        intervals?: number;
-        whitelist?: {
-            enabled?: boolean;
-            list?: string[];
-        };
         blacklist?: {
             enabled?: boolean;
             list?: string[];
         };
         discardKnownDevices?: boolean;
+        enabled?: boolean;
+        intervals?: number;
+        whitelist?: {
+            enabled?: boolean;
+            list?: string[];
+        };
+    };
+    name: string;
+    platform: string;
+    update?: {
+        ignoreGroupWithLeadingDevice?: boolean;
+        refreshRate?: number;
+        unreachable?: {
+            ignore?: boolean;
+            reportDisconnect?: boolean;
+            threshold?: number;
+        };
     };
 }
