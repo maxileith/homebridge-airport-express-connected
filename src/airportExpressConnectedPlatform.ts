@@ -3,16 +3,16 @@ import type {
     DynamicPlatformPlugin,
     Logger,
     PlatformAccessory,
-    PlatformConfig,
     Service,
     Characteristic,
     UnknownContext,
 } from 'homebridge';
 import mdns from 'mdns-js';
-import type { MDNSReply} from './settings';
+import type { MDNSReply } from './settings';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import AirportExpressAccessory from './airportExpressAccessory';
 import type { IConfigOrig, IConfig } from './IConfig';
+import type IDevice from './IDevice';
 
 /**
  * HomebridgePlatform
@@ -28,7 +28,7 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
 
     public constructor(
         public readonly log: Logger,
-        public config: PlatformConfig,
+        public config: IConfig,
         public readonly api: API,
     ) {
         this.characteristic = this.api.hap.Characteristic;
@@ -44,9 +44,7 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
 
             this.log.debug('Processing configuration:');
             this.log.debug(this.config as unknown as string);
-            this.config = this.processConfiguration(
-                this.config as unknown as IConfig,
-            ) as PlatformConfig;
+            this.config = this.processConfiguration(this.config as unknown as IConfig);
             this.log.debug(this.config as unknown as string);
 
             this.loadCachedDevices();
@@ -91,28 +89,30 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
      */
     private discoverDevices(): void {
         this.log.debug('Discovery: Creating browser');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         const mdnsBrowser: any = mdns.createBrowser(mdns.tcp('airplay'));
 
         // discover devices
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         mdnsBrowser.on('ready', () => {
             this.log.debug('Discovery: Starting discovery with browser');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             mdnsBrowser.discover();
         });
 
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         mdnsBrowser.on('update', (data: MDNSReply) => {
             // make sure we are looking at an AirPort Express 2nd Gen.
             if (
-                !data?.txt?.includes('model=AirPort10,115')
+                data.txt === undefined || data.txt.includes('model=AirPort10,115') === false
             ) {
                 return;
             }
 
             // extract serial number
-            const serialNumber: string =
-                data.txt
-                    .find((str) => str.includes('serialNumber'))
-                    ?.replace('serialNumber=', '') || '';
+            const serialNumber: string = data.txt.find((str) => str.includes('serialNumber'))?.replace('serialNumber=', '') ?? '';
 
             // generate distinct ID
             const uuid: string = this.api.hap.uuid.generate(serialNumber);
@@ -169,19 +169,17 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = {
-                serialNumber,
-                displayName,
-                data,
-            };
+                serialNumber: serialNumber,
+                displayName: displayName,
+                data: data,
+            } as IDevice;
 
             // create the accessory handler for the newly create accessory
             // this is imported from `platformAccessory.ts`
             new AirportExpressAccessory(this, accessory);
 
             // link the accessory to your platform
-            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
-                accessory,
-            ]);
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
 
             this.configureAccessory(accessory);
 
@@ -193,6 +191,7 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
         setTimeout(() => {
             try {
                 this.log.debug('Discovery: Stopping browser');
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 mdnsBrowser.stop();
             } catch (err) {
                 this.log.debug(
@@ -223,20 +222,21 @@ export default class AirportExpressConnectedPlatform implements DynamicPlatformP
 
     private loadCachedDevices(): void {
         for (const accessory of this.accessories) {
+            const device: IDevice = accessory.context.device;
             if (
-                !this.evalBlackWhiteList(accessory.context.device.serialNumber)
+                !this.evalBlackWhiteList(device.serialNumber)
             ) {
                 const l: string = this.config.discovery.whitelist.enabled
                     ? 'not whitelisted'
                     : 'blacklisted';
                 if (this.config.discovery.discardKnownDevices) {
                     this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-                    this.log.warn(`Cache: Unregistered "${accessory.context.device.displayName}" (serial number: \
-${accessory.context.device.serialNumber}) since it is ${l}.`);
+                    this.log.warn(`Cache: Unregistered "${device.displayName}" (serial number: \
+${device.serialNumber}) since it is ${l}.`);
                     return;
                 } else {
-                    this.log.warn(`Cache: The cached AirPort Express device "${accessory.context.device.displayName}" (serial number: \
-${accessory.context.device.serialNumber}) would not be discovered with the current configuration as it is ${l}. You can remove the cached \
+                    this.log.warn(`Cache: The cached AirPort Express device "${device.displayName}" (serial number: \
+${device.serialNumber}) would not be discovered with the current configuration as it is ${l}. You can remove the cached \
 device in the Homebridge UI or activate to discard known devices that do not match the white- or blacklist rules in the configuration.`,
                     );
                 }
@@ -244,7 +244,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
 
             this.log.info(
                 'Cache: Restoring existing accessory from cache: ',
-                accessory.context.device.displayName,
+                device.displayName,
             );
 
             // create the accessory handler for the restored accessory
@@ -252,7 +252,7 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             new AirportExpressAccessory(this, accessory);
             this.log.debug(
                 'Finished restoring accessory from cache: ',
-                accessory.context.device.displayName,
+                device.displayName,
             );
         }
     }
@@ -262,27 +262,27 @@ device in the Homebridge UI or activate to discard known devices that do not mat
             name: config.name,
             platform: config.platform,
             update: {
-                refreshRate: config.update?.refreshRate || 3,
+                refreshRate: config.update?.refreshRate ?? 3,
                 ignoreGroupWithLeadingDevice: config.update?.ignoreGroupWithLeadingDevice === false ? false : true,
                 unreachable: {
-                    ignore: config.update?.unreachable?.ignore || false,
-                    threshold: config.update?.unreachable?.threshold || 30,
-                    reportDisconnect: config.update?.unreachable?.reportDisconnect || false,
+                    ignore: config.update?.unreachable?.ignore ?? false,
+                    threshold: config.update?.unreachable?.threshold ?? 30,
+                    reportDisconnect: config.update?.unreachable?.reportDisconnect ?? false,
                 },
             },
             discovery: {
-                enabled: config.discovery?.enabled || true,
-                always: config.discovery?.always || true,
-                intervals: config.discovery?.intervals || 60,
+                enabled: config.discovery?.enabled ?? true,
+                always: config.discovery?.always ?? true,
+                intervals: config.discovery?.intervals ?? 60,
                 whitelist: {
-                    enabled: config.discovery?.whitelist?.enabled || false,
-                    list: config.discovery?.whitelist?.list || [],
+                    enabled: config.discovery?.whitelist?.enabled ?? false,
+                    list: config.discovery?.whitelist?.list ?? [],
                 },
                 blacklist: {
-                    enabled: config.discovery?.blacklist?.enabled || false,
-                    list: config.discovery?.blacklist?.list || [],
+                    enabled: config.discovery?.blacklist?.enabled ?? false,
+                    list: config.discovery?.blacklist?.list ?? [],
                 },
-                discardKnownDevices: config.discovery?.discardKnownDevices || false,
+                discardKnownDevices: config.discovery?.discardKnownDevices ?? false,
             },
         };
 
