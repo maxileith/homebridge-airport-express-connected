@@ -5,6 +5,7 @@ import AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
 
 import mdns from 'mdns-js';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 mdns.excludeInterface('0.0.0.0');
 
 /**

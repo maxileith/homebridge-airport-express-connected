@@ -10,5 +10,5 @@ export const PLUGIN_NAME: string = 'homebridge-airport-express-connected';
 
 export interface MDNSReply {
     fullname: string;
-    txt: string[];
+    txt?: string[];
 }

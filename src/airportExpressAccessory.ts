@@ -7,6 +7,7 @@ import type {
 import mdns from 'mdns-js';
 import type AirportExpressConnectedPlatform from './airportExpressConnectedPlatform';
 import type { MDNSReply } from './settings';
+import type IDevice from './IDevice';
 
 /**
  * Platform Accessory
@@ -16,6 +17,7 @@ import type { MDNSReply } from './settings';
 export default class AirportExpressAccessory {
 
     private accessoryInformation: Service;
+    private readonly device: IDevice;
     private lastOnline = 0;
     private reachable = true;
     private service: Service;
@@ -24,8 +26,10 @@ export default class AirportExpressAccessory {
         private readonly platform: AirportExpressConnectedPlatform,
         private readonly accessory: PlatformAccessory,
     ) {
+        this.device = this.accessory.context.device;
+
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Accessory: Constructing`,
+            `${this.device.displayName} - Accessory: Constructing`,
         );
 
         // set accessory information
@@ -38,7 +42,7 @@ export default class AirportExpressAccessory {
             .setCharacteristic(this.platform.characteristic.Model, 'A1392')
             .setCharacteristic(
                 this.platform.characteristic.SerialNumber,
-                this.accessory.context.device.serialNumber,
+                this.device.serialNumber,
             );
 
         // get the OccupancySensor service if it exists, otherwise create a new OccupancySensor service
@@ -51,7 +55,7 @@ export default class AirportExpressAccessory {
         // in this case we are using the name we stored in the `accessory.context` in the `discoverDevice
         this.service.setCharacteristic(
             this.platform.characteristic.Name,
-            this.accessory.context.device.displayName,
+            this.device.displayName,
         );
 
         // create handlers for required characteristics
@@ -61,13 +65,12 @@ export default class AirportExpressAccessory {
 
         // log that an device has been created
         this.platform.log.info(
-            `${this.accessory.context.device.displayName} - Accessory: AirPort Express device with serial number \
-${this.accessory.context.device.serialNumber} created!`,
+            `${this.device.displayName} - Accessory: AirPort Express device with serial number ${this.device.serialNumber} created!`,
         );
 
         // update the connection state periodically
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Accessory: Starting update loop`,
+            `${this.device.displayName} - Accessory: Starting update loop`,
         );
         this.updateConnectedStatus();
         setInterval(
@@ -89,7 +92,7 @@ ${this.accessory.context.device.serialNumber} created!`,
 
         if (firmwareVersion !== prevFirmwareVersion) {
             this.platform.log.info(
-                `Set Firmware of ${this.accessory.context.device.displayName} to "${firmwareVersion}".`,
+                `Set Firmware of ${this.device.displayName} to "${firmwareVersion}".`,
             );
             this.accessoryInformation.setCharacteristic(
                 this.platform.characteristic.FirmwareRevision,
@@ -103,19 +106,18 @@ ${this.accessory.context.device.serialNumber} created!`,
             '._airplay._tcp.local',
             '',
         );
-        if (this.accessory.context.device.displayName !== displayName) {
+        if (this.device.displayName !== displayName) {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: Renaming to "${displayName}" since the AirPlay speaker fullname \
-was changed.`,
+                `${this.device.displayName} - Update: Renaming to "${displayName}" since the AirPlay speaker fullname was changed.`,
             );
-            this.accessory.context.device.displayName = displayName;
+            this.device.displayName = displayName;
             this.service.setCharacteristic(
                 this.platform.characteristic.Name,
                 displayName,
             );
         } else {
             this.platform.log.debug(
-                `${this.accessory.context.device.displayName} - Update: Name unchanged.`,
+                `${this.device.displayName} - Update: Name unchanged.`,
             );
         }
     }
@@ -127,12 +129,12 @@ was changed.`,
             ).value;
         const answer: string = !this.reachable
             ? 'not responding'
-            : connected
+            : connected === this.platform.characteristic.OccupancyDetected.OCCUPANCY_DETECTED
                 ? 'connected'
                 : 'disconnected';
 
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Pull: Received GET request from HomeKit. Answer: ${answer}`,
+            `${this.device.displayName} - Pull: Received GET request from HomeKit. Answer: ${answer}`,
         );
 
         if (!this.reachable) {
@@ -155,12 +157,12 @@ was changed.`,
             .find((r: string) => r.includes('flag'))!
             .replace('flags=', '');
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Flags hex ${flagsHex}`,
+            `${this.device.displayName} - Update: Flags hex ${flagsHex}`,
         );
 
         const flagsBits: string = this.hexStringToBitString(flagsHex);
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Flags Bits ${flagsBits}`,
+            `${this.device.displayName} - Update: Flags Bits ${flagsBits}`,
         );
 
         /* bit11 corresponds to playing
@@ -168,18 +170,18 @@ was changed.`,
          */
         const bit11: boolean = flagsBits.charAt(11) === '1';
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Bit 11 is "${bit11}"`,
+            `${this.device.displayName} - Update: Bit 11 is "${bit11}"`,
         );
 
         const gcgl: boolean = mdnsTxtRecord
             .find((r: string) => r.includes('gcgl'))!
             .replace('gcgl=', '') === '1';
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: gcgl is "${gcgl}"`,
+            `${this.device.displayName} - Update: gcgl is "${gcgl}"`,
         );
 
         if (this.platform.config.update.ignoreGroupWithLeadingDevice) {
-            if ((gcgl && bit11) || !bit11) {
+            if (gcgl && bit11 || !bit11) {
                 return this.platform.characteristic.OccupancyDetected
                     .OCCUPANCY_NOT_DETECTED;
             } else {
@@ -210,7 +212,7 @@ was changed.`,
         ) {
             this.platform.log.debug(
                 `${
-                    this.accessory.context.device.displayName
+                    this.device.displayName
                 } - Update: Connection Status unchanged: ${
                     status ? 'connected' : 'disconnected'
                 }`,
@@ -227,11 +229,11 @@ was changed.`,
             this.platform.characteristic.OccupancyDetected.OCCUPANCY_DETECTED
         ) {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: Has now an active AirPlay connection.`,
+                `${this.device.displayName} - Update: Has now an active AirPlay connection.`,
             );
         } else {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: Has no active AirPlay connection.`,
+                `${this.device.displayName} - Update: Has no active AirPlay connection.`,
             );
         }
     }
@@ -246,7 +248,7 @@ was changed.`,
         if (this.reachable === reachable) {
             this.platform.log.debug(
                 `${
-                    this.accessory.context.device.displayName
+                    this.device.displayName
                 } - Update: Reachable status unchanged: ${
                     reachable ? 'reachable' : 'unreachable'
                 }`,
@@ -257,11 +259,11 @@ was changed.`,
         this.reachable = reachable;
         if (reachable) {
             this.platform.log.info(
-                `${this.accessory.context.device.displayName} - Update: reachable`,
+                `${this.device.displayName} - Update: reachable`,
             );
         } else {
             this.platform.log.warn(
-                `${this.accessory.context.device.displayName} - Update: unreachable`,
+                `${this.device.displayName} - Update: unreachable`,
             );
             // report a disconnect if this has been configured to be done
             if (this.platform.config.update.unreachable.reportDisconnect) {
@@ -277,23 +279,25 @@ was changed.`,
         let found: boolean = false;
 
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: AirPort Express with serial number \
-${this.accessory.context.device.serialNumber}`,
+            `${this.device.displayName} - Update: AirPort Express with serial number ${this.device.serialNumber}`,
         );
 
         this.platform.log.debug(
-            `${this.accessory.context.device.displayName} - Update: Creating browser`,
+            `${this.device.displayName} - Update: Creating browser`,
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         const mdnsBrowser: any = mdns.createBrowser(mdns.tcp('airplay'));
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         mdnsBrowser.on('ready', () => {
             this.platform.log.debug(
-                `${this.accessory.context.device.displayName} - Update: Starting discovery with browser`,
+                `${this.device.displayName} - Update: Starting discovery with browser`,
             );
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             mdnsBrowser.discover();
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         mdnsBrowser.on('update', (data: MDNSReply) => {
             try {
                 if (data?.txt) {
@@ -303,17 +307,17 @@ ${this.accessory.context.device.serialNumber}`,
 
                     if (
                         data.txt.includes('model=AirPort10,115') &&
-                        foundSerialNumber &&
-                        this.accessory.context.device.serialNumber ===
+                        foundSerialNumber !== undefined &&
+                        this.device.serialNumber ===
                             foundSerialNumber
                     ) {
                         this.platform.log.debug(
-                            `${this.accessory.context.device.displayName} - Update: Got mDNS reply from correct device with serial number \
-${this.accessory.context.device.serialNumber}`,
+                            `${this.device.displayName} - Update: Got mDNS reply from correct device with serial number \
+${this.device.serialNumber}`,
                         );
                         this.changeName(data.fullname);
                         this.platform.log.debug(
-                            `${this.accessory.context.device.displayName} - Update: txt record contents: ${data.txt}`,
+                            `${this.device.displayName} - Update: txt record contents: ${data.txt}`,
                         );
                         this.changeFirmware(data.txt);
                         this.setConnectStatus(this.isDeviceConnected(data.txt));
@@ -321,20 +325,22 @@ ${this.accessory.context.device.serialNumber}`,
                         this.lastOnline = Date.now() / 1000;
 
                         this.platform.log.debug(
-                            `${this.accessory.context.device.displayName} - Update: Stopping browser`,
+                            `${this.device.displayName} - Update: Stopping browser`,
                         );
                         found = true;
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         mdnsBrowser.stop();
                     }
                 }
             } catch (error) {
                 this.platform.log.error(
-                    `${this.accessory.context.device.displayName} - Update: Error in mDNS check, found invalid record`,
+                    `${this.device.displayName} - Update: Error in mDNS check, found invalid record`,
                 );
                 this.platform.log.debug(error as string);
                 this.platform.log.debug(
-                    `${this.accessory.context.device.displayName} - Update: Stopping browser`,
+                    `${this.device.displayName} - Update: Stopping browser`,
                 );
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 mdnsBrowser.stop();
             }
         });
@@ -346,8 +352,8 @@ ${this.accessory.context.device.serialNumber}`,
                         Date.now() / 1000 - this.lastOnline,
                     );
                     this.platform.log.debug(
-                        `${this.accessory.context.device.displayName} - Update: Device did not respond to the mDNS disovery. The device is \
-not responding since ${secondsOffline} seconds.`,
+                        `${this.device.displayName} - Update: Device did not respond to the mDNS disovery. The device is not responding \
+since ${secondsOffline} seconds.`,
                     );
                     if (
                         this.lastOnline +
@@ -357,10 +363,11 @@ not responding since ${secondsOffline} seconds.`,
                         this.setReachableStatus(false);
                     }
                 }
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 mdnsBrowser.stop();
             } catch (err) {
                 this.platform.log.debug(
-                    `${this.accessory.context.device.displayName} - Update: Error during stopping the browser: ${err}`,
+                    `${this.device.displayName} - Update: Error during stopping the browser: ${err}`,
                 );
             }
         }, this.platform.config.update.refreshRate * 1000);
